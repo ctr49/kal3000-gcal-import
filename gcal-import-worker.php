@@ -51,13 +51,20 @@ function gcal_import_worker()
     error_log ("gcal_import_worker finished", 0);
 }	
 
+include ('CalFileParser.php'); 
 
 function gcal_import_process_category($category) {
     global $wpdb;
     $table = $wpdb->prefix.GCAL_TABLE;
     $structure = "SELECT gcal_link from $table WHERE gcal_category = '$category' AND gcal_active = '1' ;";
     $link = $wpdb->query($structure);
-        
+    error_log ("found active link $link for category $category");        
+    $cal = new CalFileParser();
+    // will this also work with a proxy? After all, it does a file_get_contents internally.
+    $result = $cal->parse($link);
+    $file = "/tmp/$category-array.txt";
+    file_put_contents ($file, print_r ($result, TRUE)); 
+
 
 }	
 

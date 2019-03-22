@@ -4,8 +4,7 @@ INSTALLDIR = /usr/share/wordpress/wp-content/plugins/$(NAME)
 VERSION = 0.1.0
 
 release: 
-	cd ..
-	zip -9 -r $(NAME)-$(VERSION).zip $(NAME)/*.php $(NAME)/*.txt
+	( cd .. ; zip -9 -r $(NAME)-$(VERSION).zip . -i $(NAME)/*.php $(NAME)/*.txt $(NAME)/*.md )
 
 install: 
 	mkdir -p $(INSTALLDIR)
