@@ -8,7 +8,7 @@ release:
 
 install: 
 	mkdir -p $(INSTALLDIR)
-	cp -va *.txt *.php $(INSTALLDIR)
+	cp -vu *.txt *.php $(INSTALLDIR)
 	chown -R www-data:www-data $(INSTALLDIR)
 
 
