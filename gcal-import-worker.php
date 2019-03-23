@@ -43,11 +43,12 @@ function gcal_import_worker()
     $structure = "SELECT gcal_category from $table ;";
     $categories = $wpdb->query($structure);
     file_put_contents ('/tmp/categories.txt', var_dump ($categories)); 
+/*
     foreach ( $categories as $category) {
 	error_log ("found category $category");
         gcal_import_process_category($category);
     }	    
-
+*/
 
     error_log ("gcal_import_worker finished", 0);
 }	

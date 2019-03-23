@@ -45,6 +45,20 @@ define ('GCAL_TABLE', 'gcal_import');
 require_once dirname( __FILE__ ) . "/gcal-import-worker.php"; 
 add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
 
+
+// temporary: create 5 min scheduler	
+add_filter( 'cron_schedules', 'example_add_cron_interval' );
+ 
+function example_add_cron_interval( $schedules ) {
+    $schedules['five_minutes'] = array(
+        'interval' => 300,
+        'display'  => esc_html__( 'Every Five Minutes' ),
+    );
+ 
+    return $schedules;
+}
+
+
 /**
  * Initializes the plugin and creates a table
  *
@@ -62,29 +76,30 @@ function gcal_import_activate()
     global $wpdb;
     // CREATE will produce an error if the table exists already. 
     $table = $wpdb->prefix.GCAL_TABLE;
-    $structure = "CREATE TABLE IF NOT EXISTS $table (
+    $query = "CREATE TABLE IF NOT EXISTS $table (
         id INT(9) NOT NULL AUTO_INCREMENT,
         gcal_category VARCHAR(32) NOT NULL,
         gcal_link VARCHAR(256) NOT NULL,
         gcal_active INT(9) DEFAULT 1,
 	UNIQUE KEY id (id)
     );";
-    $wpdb->query($structure);
+    $wpdb->query($query);
 
-/*
-    if () {
-        // Populate table
-        // this will later be set by the admin page
-        $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
-	    VALUES('kv-freising', 'https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics', '1')");
-    }
- */
+    // Populate table
+    // this will later be set by the admin page
+    // empty it first to prevent doublettes
+    $wpdb->query("DELETE FROM $table WHERE 1=1");
+    $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
+        VALUES('kv-freising', 'https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics', '1')");
+    $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
+	    VALUES('ov-freising', '/tmp/neufahrn.ics', '1')");
 
-    // do it once now! 
+
+    // do it once now! Won't work if the table hasn't been populated yet. 
     gcal_import_worker; 
     // and start the scheduler; 
     if ( ! wp_next_scheduled( 'gcal_import_worker_hook' ) ) {
-        wp_schedule_event( time(), 'hourly', 'gcal_import_worker_hook' );
+        wp_schedule_event( time(), 'five_minutes', 'gcal_import_worker_hook' );
     }
     error_log ("gcal_import_activate finished");
 
@@ -124,8 +139,8 @@ function gcal_import_uninstall()
     // gcal_import_deactivate; 
     global $wpdb;
     $table = $wpdb->prefix.GCAL_TABLE;
-    $structure = "DROP TABLE $table ;";
-    $wpdb->query($structure);
+    $query = "DROP TABLE $table ;";
+    $wpdb->query($query);
     error_log ("gcal_import_uninstall finished");
 }	
 
