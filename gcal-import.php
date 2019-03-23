@@ -41,6 +41,10 @@ define ('GCAL_TABLE', 'gcal_import');
  *
  */
 
+// The real work goes here. 
+require_once dirname( __FILE__ ) . "/gcal-import-worker.php"; 
+add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
+
 /**
  * Initializes the plugin and creates a table
  *
@@ -76,6 +80,9 @@ function gcal_import_activate()
     }
  */
 
+    // do it once now! 
+    gcal_import_worker; 
+    // and start the scheduler; 
     if ( ! wp_next_scheduled( 'gcal_import_worker_hook' ) ) {
         wp_schedule_event( time(), 'hourly', 'gcal_import_worker_hook' );
     }
@@ -84,7 +91,6 @@ function gcal_import_activate()
 }
 
 register_activation_hook( __FILE__, 'gcal_import_activate' );
-
 
 
 /**
@@ -97,7 +103,7 @@ register_activation_hook( __FILE__, 'gcal_import_activate' );
 function gcal_import_deactivate()
 {
     error_log ("gcal_import_deactivate started");
-    wp_clear_scheduled_hook('gcal_import_cron_hook' );
+    wp_clear_scheduled_hook('gcal_import_worker_hook' );
     error_log ("gcal_import_deactivate finished");
 }	
 
@@ -146,9 +152,6 @@ function gcal_import_admin()
 }
 
 
-// The real work goes here. 
-require_once dirname( __FILE__ ) . "/gcal-import-worker.php"; 
-add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
 
 
 	
