@@ -42,7 +42,7 @@ function gcal_import_worker()
     $table = $wpdb->prefix.GCAL_TABLE;
     $categories = $wpdb->get_results("SELECT gcal_category from $table");
     $file = dirname (__FILE__) . '/categories.txt'; 
-    file_put_contents ($file, var_dump ($categories)); 
+    file_put_contents ($file, var_export ($categories, TRUE)); 
 /*
     foreach ( $categories as $category) {
 	error_log ("found category $category");
