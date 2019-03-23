@@ -42,7 +42,7 @@ define ('GCAL_TABLE', 'gcal_import');
  */
 
 // The real work goes here. 
-require_once dirname( __FILE__ ) . "/gcal-import-worker.php"; 
+include dirname( __FILE__ ) . "/gcal-import-worker.php"; 
 add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
 
 
