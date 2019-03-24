@@ -53,7 +53,7 @@ function gcal_import_worker()
     error_log ("gcal_import_worker finished", 0);
 }	
 
-include ('CalFileParser.php'); 
+// include ('CalFileParser.php'); 
 
 function gcal_import_process_category($category) {
     global $wpdb;
