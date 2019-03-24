@@ -41,19 +41,24 @@ function gcal_import_worker()
     global $wpdb;
     $table = $wpdb->prefix.GCAL_TABLE;
     $categories = $wpdb->get_results("SELECT gcal_category from $table");
+    if (empty($categories) {
+        error_log ("keine Einträge in $wpdb->prefix.GCAL_TABLE gefunden.");
+        return (0);
+    }
     $file = dirname (__FILE__) . '/categories.txt'; 
     file_put_contents ($file, var_export ($categories, TRUE)); 
-/*
+
     foreach ( $categories as $category) {
 	error_log ("found category $category");
         gcal_import_process_category($category);
     }	    
-*/
 
     error_log ("gcal_import_worker finished", 0);
 }	
 
-// include ('CalFileParser.php'); 
+
+
+
 
 function gcal_import_process_category($category) {
     global $wpdb;
@@ -61,13 +66,17 @@ function gcal_import_process_category($category) {
     $query = "SELECT gcal_link from $table WHERE gcal_category = '$category' AND gcal_active = '1' ;";
     $link = $wpdb->query($query);
     error_log ("found active link $link for category $category");        
-    $cal = new CalFileParser();
-    // will this also work with a proxy? After all, it does a file_get_contents internally.
-    $result = $cal->parse($link);
-    $file = dirname (__FILE__) . '/$category-array.txt';
-    file_put_contents ($file, var_dump ($result)); 
 
-
+    // jetzt haben wir category und link. 
+    // erst alle termine von category löschen
+	$post_ids = $wpdb->get_results("SELECT Id from $wpdb->prefix.postmeta where
+	        key = '_gcal_category' AND key_value = '$category'"); 
+	foreach ($post_ids as $post_id) {
+		wp_trash_post($post_id);
+	}
+	// jetzt die neuen Posts anlegen
+	gcal_import_do_import($category, $link);
 }	
+
 
 

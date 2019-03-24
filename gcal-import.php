@@ -68,20 +68,22 @@ function example_add_cron_interval( $schedules ) {
  * - gcal_link - the public or private .ics link
  * - gcal_veranstalter - ?  
  * - gcal_active - flag if a calendar is active or not. Default active. 
+ *
+ * Since there is no install hook in WP, we will use the activation hook for both. 
  */
 
 function gcal_import_activate()
 {
     error_log ("gcal_import_activate started");
     global $wpdb;
-    // CREATE will produce an error if the table exists already. 
+    // CREATE table if it does not exist already. 
     $table = $wpdb->prefix.GCAL_TABLE;
     $query = "CREATE TABLE IF NOT EXISTS $table (
         id INT(9) NOT NULL AUTO_INCREMENT,
         gcal_category VARCHAR(32) NOT NULL,
         gcal_link VARCHAR(256) NOT NULL,
         gcal_active INT(9) DEFAULT 1,
-	UNIQUE KEY id (id)
+	    UNIQUE KEY id (id)
     );";
     $wpdb->query($query);
 
@@ -96,10 +98,15 @@ function gcal_import_activate()
 
 
     // do it once now! Won't work if the table hasn't been populated yet. 
-    gcal_import_worker; 
+    $result = $wpdb->query("SELECT gcal_category FROM $table");
+    if ($result != 0) {
+        gcal_import_worker; 
+    }
     // and start the scheduler; 
+    // in production, we will do this hourly. 
     if ( ! wp_next_scheduled( 'gcal_import_worker_hook' ) ) {
         wp_schedule_event( time(), 'five_minutes', 'gcal_import_worker_hook' );
+    //  wp_schedule_event( time(), 'hourly', 'gcal_import_worker_hook' );
     }
     error_log ("gcal_import_activate finished");
 
@@ -109,7 +116,7 @@ register_activation_hook( __FILE__, 'gcal_import_activate' );
 
 
 /**
- * Deactivate unregisters the housekeeping function.
+ * Deactivate unregisters the scheduling function.
  *
  * @since 0.1.0
  *
@@ -118,7 +125,7 @@ register_activation_hook( __FILE__, 'gcal_import_activate' );
 function gcal_import_deactivate()
 {
     error_log ("gcal_import_deactivate started");
-    wp_clear_scheduled_hook('gcal_import_worker_hook' );
+    wp_clear_scheduled_hook('gcal_import_worker_hook');
     error_log ("gcal_import_deactivate finished");
 }	
 
@@ -139,8 +146,7 @@ function gcal_import_uninstall()
     // gcal_import_deactivate; 
     global $wpdb;
     $table = $wpdb->prefix.GCAL_TABLE;
-    $query = "DROP TABLE $table ;";
-    $wpdb->query($query);
+    $wpdb->query("DROP TABLE $table");
     error_log ("gcal_import_uninstall finished");
 }	
 
