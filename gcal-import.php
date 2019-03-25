@@ -98,16 +98,20 @@ function gcal_import_activate()
 	    VALUES('ov-freising', '/tmp/neufahrn.ics', '1')");
 
     // CREATE geocaching table if it does not exist already. 
+    // the location field will be used only during development and debugging, and will be omitted in production. 
     $table = $wpdb->prefix.GCAL_GEO_TABLE;
     $query = "CREATE TABLE IF NOT EXISTS $table (
         id INT(9) NOT NULL AUTO_INCREMENT,
+        gcal_geo_location VARCHAR(128) NOT NULL,
         gcal_geo_hash VARCHAR(40) NOT NULL,
         gcal_geo_lat VARCHAR(20) NOT NULL,
         gcal_geo_lon VARCHAR(20) NOT NULL,
+        gcal_geo_timestamp DATETIME NOT NULL,
 	    UNIQUE KEY id (id)
     );";
     $wpdb->query($query);
 
+    $table = $wpdb->prefix.GCAL_TABLE;
     // do it once now! Won't work if the table hasn't been populated yet. 
     $result = $wpdb->query("SELECT gcal_category FROM $table");
     if ($result != 0) {
@@ -158,7 +162,8 @@ function gcal_import_uninstall()
     global $wpdb;
     $table = $wpdb->prefix.GCAL_TABLE;
     $wpdb->query("DROP TABLE $table");
-    $wpdb->query("DROP TABLE gcal_import_geocache");
+    $table = $wpdb->prefix.GCAL_GEO_TABLE;
+    $wpdb->query("DROP TABLE $table");
     error_log ("gcal_import_uninstall finished");
 }	
 
