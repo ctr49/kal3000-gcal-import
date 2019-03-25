@@ -64,7 +64,7 @@ function gcal_import_process_category($category) {
     global $wpdb;
     $table = $wpdb->prefix.GCAL_TABLE;
     $query = "SELECT gcal_link from $table WHERE gcal_category = '$category' AND gcal_active = '1' ;";
-    $link = $wpdb->query($query);
+    $link = $wpdb->get_results($query);
     error_log ("found active link $link for category $category");        
 
     // jetzt haben wir category und link. 

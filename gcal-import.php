@@ -26,6 +26,7 @@
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 define ('GCAL_TABLE', 'gcal_import');
+define ('GCAL_GEO_TABLE', 'gcal_import_geocache');
 
 // we may need a http proxy for the fetch. Should be set from the admin page. 
 // define ('http_proxy', 'http://example.org:8080'); 
@@ -96,6 +97,16 @@ function gcal_import_activate()
     $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
 	    VALUES('ov-freising', '/tmp/neufahrn.ics', '1')");
 
+    // CREATE geocaching table if it does not exist already. 
+    $table = $wpdb->prefix.GCAL_GEO_TABLE;
+    $query = "CREATE TABLE IF NOT EXISTS $table (
+        id INT(9) NOT NULL AUTO_INCREMENT,
+        gcal_geo_hash VARCHAR(40) NOT NULL,
+        gcal_geo_lat VARCHAR(20) NOT NULL,
+        gcal_geo_lon VARCHAR(20) NOT NULL,
+	    UNIQUE KEY id (id)
+    );";
+    $wpdb->query($query);
 
     // do it once now! Won't work if the table hasn't been populated yet. 
     $result = $wpdb->query("SELECT gcal_category FROM $table");
@@ -147,6 +158,7 @@ function gcal_import_uninstall()
     global $wpdb;
     $table = $wpdb->prefix.GCAL_TABLE;
     $wpdb->query("DROP TABLE $table");
+    $wpdb->query("DROP TABLE gcal_import_geocache");
     error_log ("gcal_import_uninstall finished");
 }	
 
