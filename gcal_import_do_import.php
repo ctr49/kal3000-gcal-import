@@ -132,11 +132,11 @@ function gcal_import_do_import($category, $link) {
 
     // we must set a current user because we may not be logged in. 
     $user_id = 1;
-//    $user = get_user_by( 'id', $user_id ); 
-//    if( $user ) {
-//        wp_set_current_user( $user_id, $user->user_login );
-//        wp_set_auth_cookie( $user_id );
-//    }
+    $user = get_user_by( 'id', $user_id ); 
+    if( $user ) {
+        wp_set_current_user( $user_id, $user->user_login );
+        wp_set_auth_cookie( $user_id );
+    }
 	foreach ($cal->getSortedEvents() as $r) {
         // create a per-post nonce.
         // $gcal_nonce = wp_create_nonce();
@@ -168,19 +168,15 @@ function gcal_import_do_import($category, $link) {
         $post['wpc_lon'] = $my_latlon[1];
         $post['wpc_zoom'] = 10;
         $post['wpcalendar_noncename'] = $gcal_nonce; //  
-        // Jetzt alles nach $_POST kopieren
+        // TODO: Jetzt alles nach $_POST kopieren
+        // crappy global var ... 
 //        $post_id = wp_write_post ();
         // error handling, wenn Fehler
 //        add_post_meta ($post_id, '_gcal_category', '$category'); // gemient ist die aus dem GCal abgeleitete cat. 
-        var_export ($post);
+        $file = dirname (__FILE__) . '/wp_write_post.txt';
+        file_put_contents ( $file, var_export ($post, TRUE) );
 	}
 
 }  
-
-
-
-$link='https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics';
-$category="Neufahrn";
-gcal_import_do_import($category, $link);
 
 
