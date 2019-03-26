@@ -43,7 +43,7 @@ define ('GCAL_GEO_TABLE', 'gcal_import_geocache');
  */
 
 // The real work goes here. 
-include dirname( __FILE__ ) . "/gcal-import-worker.php"; 
+require_once dirname( __FILE__ ) . "/gcal-import-worker.php"; 
 add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
 
 
@@ -93,9 +93,11 @@ function gcal_import_activate()
     // empty it first to prevent doublettes
     $wpdb->query("DELETE FROM $table WHERE 1=1");
     $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
-        VALUES('kv-freising', 'https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics', '1')");
+        VALUES('Kreisverband', 'https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics', '1')");
+/*
     $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
 	    VALUES('ov-freising', '/tmp/neufahrn.ics', '1')");
+*/
 
     // CREATE geocaching table if it does not exist already. 
     // the location field will be used only during development and debugging, and will be omitted in production. 
@@ -106,7 +108,7 @@ function gcal_import_activate()
         gcal_geo_hash VARCHAR(40) NOT NULL,
         gcal_geo_lat VARCHAR(20) NOT NULL,
         gcal_geo_lon VARCHAR(20) NOT NULL,
-        gcal_geo_timestamp DATETIME NOT NULL,
+        gcal_geo_timestamp INT(16) NOT NULL,
 	    UNIQUE KEY id (id)
     );";
     $wpdb->query($query);
@@ -115,7 +117,7 @@ function gcal_import_activate()
     // do it once now! Won't work if the table hasn't been populated yet. 
     $result = $wpdb->query("SELECT gcal_category FROM $table");
     if ($result != 0) {
-        gcal_import_worker; 
+        gcal_import_worker(); 
     }
     // and start the scheduler; 
     // in production, we will do this hourly. 
