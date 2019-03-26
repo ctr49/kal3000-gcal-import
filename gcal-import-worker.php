@@ -41,7 +41,7 @@ function gcal_import_worker()
     global $wpdb;
     $table = $wpdb->prefix.GCAL_TABLE;
     $categories = $wpdb->get_results("SELECT gcal_category from $table");
-    if (empty($categories) {
+    if (empty($categories)) {
         error_log ("keine Einträge in $wpdb->prefix.GCAL_TABLE gefunden.");
         return (0);
     }
