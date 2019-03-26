@@ -55,8 +55,10 @@ function gcal_import_geocode($location) {
 
     $hash = hash ('md5', $location); 
     $query = "SELECT gcal_geo_lat, gcal_geo_lon FROM $table WHERE gcal_geo_hash = $hash";
+    error_log ("gcal_import_geocode looking up hash $hash location $location");
     $result = $wpdb->get_results($query);
     if ( ! empty ($result) ) {
+        error_log ("gcal_import_geocode found hash $hash lat $result[0] lon $result[1]");
         return ($result);
     } else {    
 
@@ -97,6 +99,7 @@ function gcal_import_geocode($location) {
             // and now we need to look for:
             $pattern = '#www.google.com/maps/preview/place/[^/]+/@([\d\.]+),([\d\.]+),.*#';
             preg_match ($pattern, $result, $matches);
+            error_log ("gcal_import_geocode geocoded lat $matches[1] lon $matches[2] for hash $hash");
 
             // do the caching now. 
             // $wpdb_insert does all the sanitizing for us. 
@@ -168,6 +171,15 @@ function gcal_import_do_import($category, $link) {
         // create a default form
         $post = get_default_post_to_edit ('termine');
 
+        $file = dirname (__FILE__) . '/' . $post['post_name'] . '-defaults.txt';
+        file_put_contents ( $file, var_export ($post, TRUE) );
+
+// TODO: 
+        if ( ! empty $r['ATTACH'] ) {
+            // create image attachment and associate with new post
+            error_log ("gcal_import_do_import found attachment $r['ATTACH'] for $r['SUMMARY']");
+        }
+
         // and fill in the post form
         $post['post_content'] = $r['DESCRIPTION'];
         $post['post_title'] = $r['SUMMARY'];
@@ -199,12 +211,13 @@ function gcal_import_do_import($category, $link) {
             _gcal_category => $category,
         );
         $post['meta_input'] = $postmeta;
-        $post_id = wp_insert_post( $post, false );
         // debug
-        $file = dirname (__FILE__) . '/' . $post['post_name'] . '.txt';
+        $file = dirname (__FILE__) . '/' . $post['post_name'] . '-finished.txt';
         file_put_contents ( $file, var_export ($post, TRUE) );
-	}
 
+        $post_id = wp_insert_post( $post, false );
+        return ($post_id);
+	}
 }  
 
 

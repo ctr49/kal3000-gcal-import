@@ -72,6 +72,7 @@ function gcal_import_process_category($category) {
 	$post_ids = $wpdb->get_results("SELECT Id from $wpdb->prefix.postmeta where
 	        key = '_gcal_category' AND key_value = '$category'"); 
 	foreach ($post_ids as $post_id) {
+        error_log ("trashing post_id $post_id");
 		wp_trash_post($post_id);
 	}
 	// jetzt die neuen Posts anlegen
