@@ -45,7 +45,9 @@ Mit Aktivieren des Plugins beginnt das Plugin sofort mit der Synchronisation.
 Support gibt es aktuell nur per E-Mail an <a href="mailto:hm@seneca.muc.de">Harald Milz</a>. (TODO: Obfuscate mail adsress)
 
 
+## Internationalization
 
+Since this plugin is only relevant for people using the Urwahl3000 theme, and this includes only members of Bündnis 90 / Die Grünen, the plugin will only be available in German. Should a demand for other languages arise, feel free to contact me - and offer your support :-) 
 
 
 
