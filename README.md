@@ -1,6 +1,10 @@
 # kal3000-gcal-import
 
-Ein Wordpress-Plugin, das auf das Grüne Wordpress-Theme <a href="http://kre8tiv.de/urwahl3000/">Urwahl3000</a> aufsetzt und eine Integration beliebig vieler öffentlicher Google-Kalender ermöglicht. 
+Ein Wordpress-Plugin, das auf das Grüne Wordpress-Theme <a href="http://kre8tiv.de/urwahl3000/">Urwahl3000</a> aufsetzt und eine Integration beliebig vieler öffentlicher Google-Kalender ermöglicht.   
+  
+## Warnung
+
+Das hier ist noch "work in progress", und es ist noch nicht benutzbar!   
 
 ## Motivation
 
