@@ -42,7 +42,9 @@ Für eine solche Integration gibt es eine Reihe von Motivatoren:
 
 Mit Aktivieren des Plugins beginnt das Plugin sofort mit der Synchronisation.
 
+## Proxy-Konfiguration
 
+Das Plugin benötigt den Zugriff nach "draußen", um ICAL-Feeds zu holen oder auf Google Maps zuzugreifen. In Wordpress werden Proxy-Einstellungen in <code>/usr/share/wordpress/wp-config.php</code> bzw. auf Ubuntu / Debian in <code>/etc/wordpress/config-SITE.php</code> festgelegt. Zur Dokumentation bitte <a href="https://developer.wordpress.org/reference/classes/wp_http_proxy/">hier entlang</a>. 
 
 ## Support
 
