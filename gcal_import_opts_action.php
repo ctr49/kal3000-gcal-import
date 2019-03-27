@@ -1,11 +1,22 @@
 <?php
 
-defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
+define('ABSPATH', $_REQUEST['abspath']);   // security??? 
+  
 
-if ( ! empty( $_POST ) && check_admin_referer( 'gcal_import_opts', 'gcal_import_nonce' ) ) {
+echo "<pre> Hier geht's los, vor dem if. ABSPATH = " . ABSPATH . "</pre>"; 
+
+if ( ! empty( $_REQUEST )  ) {
+// if ( ! empty( $_REQUEST ) && check_admin_referer( 'gcal_import_opts', 'gcal_import_nonce' ) ) {
+
    // process form data
 
     echo "<div class=\"wrap\">" . PHP_EOL;
+
+    echo "<h2>SERVER data:</h2>";
+    echo "<pre>" . PHP_EOL;
+    var_export ($_SERVER); 
+    echo "</pre>" . PHP_EOL;
+
     echo "<h2>POST data:</h2>";
     echo "<pre>" . PHP_EOL;
     var_export ($_POST); 
@@ -22,7 +33,9 @@ if ( ! empty( $_POST ) && check_admin_referer( 'gcal_import_opts', 'gcal_import_
     // alles in die DB schreiben
 
     // und redirect zurück zur Admin-Seite 
-
+    if ( wp_redirect( _wp_http_referer ) ) {
+        exit;
+    }
 
 }
 
