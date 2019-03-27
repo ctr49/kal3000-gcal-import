@@ -44,20 +44,20 @@ define ('GCAL_GEO_TABLE', 'gcal_import_geocache');
 
 // The real work goes here. 
 require_once dirname( __FILE__ ) . "/gcal-import-worker.php"; 
-add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
+require_once dirname( __FILE__ ) . "/gcal-import-admin.php"; 
 
 
-// temporary: create 5 min scheduler	
-add_filter( 'cron_schedules', 'example_add_cron_interval' );
+// create custom scheduler	
+add_filter( 'cron_schedules', 'gcal_cron_interval' );
  
-function example_add_cron_interval( $schedules ) {
-    $schedules['five_minutes'] = array(
-        'interval' => 300,
-        'display'  => esc_html__( 'Every Five Minutes' ),
+function gcal_cron_interval( $schedules ) {
+    $schedules['gcal_interval'] = array(
+        'interval' => get_option( '_gcal_interval' ) ,
+        'display'  => esc_html__( 'GCal fetch Interval' ),
     );
- 
     return $schedules;
 }
+
 
 
 /**
@@ -99,6 +99,11 @@ function gcal_import_activate()
 	    VALUES('ov-freising', '/tmp/neufahrn.ics', '1')");
 */
 
+    // Create some plugin options in wp_options if they don't exist already
+    add_option( '_gcal_geocoding', 'off', '', 'no' );   // off, official or inofficial
+    add_option( '_gcal_apikey', '', '', 'no' );         // default empty
+    add_option( '_gcal_interval', '60', '', 'no' );     // default 60 minutes
+    
     // CREATE geocaching table if it does not exist already. 
     // the location field will be used only during development and debugging, and will be omitted in production. 
     $table = $wpdb->prefix.GCAL_GEO_TABLE;
@@ -122,8 +127,7 @@ function gcal_import_activate()
     // and start the scheduler; 
     // in production, we will do this hourly. 
     if ( ! wp_next_scheduled( 'gcal_import_worker_hook' ) ) {
-        wp_schedule_event( time(), 'five_minutes', 'gcal_import_worker_hook' );
-    //  wp_schedule_event( time(), 'hourly', 'gcal_import_worker_hook' );
+        wp_schedule_event( time(), 'gcal_interval', 'gcal_import_worker_hook' );
     }
     error_log ("gcal_import_activate finished");
 
@@ -162,34 +166,22 @@ function gcal_import_uninstall()
     // can we uninstall without deactivating first?     
     // gcal_import_deactivate; 
     global $wpdb;
-    $table = $wpdb->prefix.GCAL_TABLE;
-    $wpdb->query("DROP TABLE $table");
-    $table = $wpdb->prefix.GCAL_GEO_TABLE;
-    $wpdb->query("DROP TABLE $table");
+    // the category / link table and the geo cache
+    $tables = array( GCAL_TABLE, GCAL_GEO_TABLE );
+    foreach ( $tables AS $table ) {
+        $table = $wpdb->prefix . $table; 
+        $wpdb->query( "DROP TABLE IF EXISTS $table" );
+    }
+    // and the options.
+    $options = array( '_gcal_geocoding', '_gcal_apikey', '_gcal_interval' );
+    foreach ( $options AS $option ) {
+        delete_option( $option );
+    }
     error_log ("gcal_import_uninstall finished");
 }	
 
 register_uninstall_hook( __FILE__, 'gcal_import_uninstall' );
 
-
-/**
- * Display the admin table
- * may go to a separate file eventually
- *
- * @since 0.1.0
- *
- */
-
-function gcal_import_admin()
-{
-    global $wpdb;
-    $table = $wpdb->prefix.GCAL_TABLE;
-
-    // we MUST protect queries, 
-    // see https://codex.wordpress.org/Class_Reference/wpdb#Protect_Queries_Against_SQL_Injection_Attacks
-    // $sql = $wpdb->prepare( 'INSERT INTO $table ... ' , value_parameter[, value_parameter ... ] );
-    
-}
 
 
 
