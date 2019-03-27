@@ -53,9 +53,17 @@ function gcal_import_worker()
         $table = $wpdb->prefix . 'postmeta';
     	$post_ids = $wpdb->get_results("SELECT post_id FROM $table WHERE
     	        meta_key = '_gcal_category' AND meta_value = '$category->gcal_category'"); 
+
+// die ganze Logik ist Mist, weil immer wieder die gleichen termine gelöscht und neu angelegt werden, was Last auf WP bringt. 
+// besser: wir merken uns je Kalendereintrag die Google-UID und
+// - wenn der Eintrag schon existiert: nur updaten
+// - wenn nicht, neu anlegen
+// - wenn im Reply ein vorhandener Termin nicht vorkommt, wurde er wohl gelöscht, und raus damit. 
+// d.h. wir merken uns in postmeta zusätzlich die _gcal_uid. 
+
     	foreach ($post_ids as $post_id) {
             error_log ("trashing post_id $post_id->post_id");
-    		wp_trash_post($post_id->post_id);
+    		wp_trash_post($post_id->post_id); // should we DELETE here? 
     	}
     	// jetzt die neuen Posts anlegen
     	gcal_import_do_import($category->gcal_category, $category->gcal_link);
@@ -82,6 +90,7 @@ function gcal_import_geoshow($location) {
 }
 
 
+/*
 function getHttpCode($http_response_header)
 {
     if(is_array($http_response_header))
@@ -92,7 +101,7 @@ function getHttpCode($http_response_header)
     }
     return 0;
 }
-
+*/
 
 
 function gcal_import_geocode($location) {
@@ -144,6 +153,7 @@ function gcal_import_geocode($location) {
         while ($success == false && $attempts < 3) {
             // @ = 'ignore_errors' => TRUE
             $url = "https://maps.google.com/maps?q=" . urlencode ($location);
+/*
             // we use curl instead of file_get_contents because curl does many high level things e.g. redirects and cookies
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -155,17 +165,21 @@ function gcal_import_geocode($location) {
             $result = curl_exec($ch);
             $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
+*/
+            // we use wp-remote.* instead of file_get_contents because it does many high level things e.g. redirects
+            $response = wp_remote_get($url);
+            $result = wp_remote_retrieve_body($response);
+            $http_code = wp_remote_retrieve_response_code($response);
             if (200 == $http_code) {
                 $success = true;
             } elseif (429 == $http_code) {
                 time.sleep(2);  
-                error_log ("got a HTTP 429 Too Many Requests on $url");
                 ++$attempts; 
+                error_log ("got $attempts HTTP 429 Too Many Requests on $url");
             } else {
-                error_log ("Unbekannter HTTP Fehler $http_code");
+                error_log ("Ärgerlicher HTTP Fehler $http_code");
                 return array (' ', ' ');
             }
-            
         }
     
         // ok so $result seems to be valid.
