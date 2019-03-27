@@ -92,9 +92,9 @@ function gcal_import_activate()
 */
 
     // Create some plugin options in wp_options if they don't exist already
-    add_option( '_gcal_geocoding', 'off', '', 'no' );   // off, official, inofficial, or OSM (experimental)
-    add_option( '_gcal_apikey', '', '', 'no' );         // default empty
-    add_option( '_gcal_interval', '5', '', 'no' );     // default 60 minutes
+//    add_option( '_gcal_geocoding', 'off', '', 'no' );   // off, official, inofficial, or OSM (experimental)
+//    add_option( '_gcal_apikey', '', '', 'no' );         // default empty
+//    add_option( '_gcal_interval', '5', '', 'no' );     // default 60 minutes
     
     // CREATE geocaching table if it does not exist already. 
     // the location field will be used only during development and debugging, and will be omitted in production. 
@@ -165,11 +165,12 @@ function gcal_import_uninstall()
         $wpdb->query( "DROP TABLE IF EXISTS $table" );
     }
     // and the options.
-    $options = array( '_gcal_geocoding', '_gcal_apikey', '_gcal_interval' );
-    foreach ( $options AS $option ) {
-        delete_option( $option );
-    }
-    error_log ("gcal_import_uninstall finished");
+    delete_option ( 'gcal_options' );
+//     $options = array( '_gcal_geocoding', '_gcal_apikey', '_gcal_interval' );
+//     foreach ( $options AS $option ) {
+//         delete_option( $option );
+//     }
+//    error_log ("gcal_import_uninstall finished");
 }	
 
 register_uninstall_hook( __FILE__, 'gcal_import_uninstall' );
