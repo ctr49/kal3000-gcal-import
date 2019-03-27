@@ -201,10 +201,10 @@ function gcal_import_do_import($category, $link) {
 
     error_log ("entering gcal_import_do_import($category, $link)");
    
-	require_once dirname (__FILE__) . '/../icalparser/src/IcalParser.php';
-	require_once dirname (__FILE__) . '/../icalparser/src/Recurrence.php';
-	require_once dirname (__FILE__) . '/../icalparser/src/Freq.php';
-	require_once dirname (__FILE__) . '/../icalparser/src/WindowsTimezones.php';
+	require_once dirname (__FILE__) . '/icalparser/src/IcalParser.php';
+	require_once dirname (__FILE__) . '/icalparser/src/Recurrence.php';
+	require_once dirname (__FILE__) . '/icalparser/src/Freq.php';
+	require_once dirname (__FILE__) . '/icalparser/src/WindowsTimezones.php';
 
 	$cal = new \om\IcalParser();
 	$results = $cal->parseFile($link);
