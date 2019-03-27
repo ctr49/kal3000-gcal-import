@@ -9,11 +9,6 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 
 
-// TODO: housekeeping function. use WP scheduler. 
-// This is where the real work is done, i.e. retrieve, parse the GCAL, and insert the posts. 
-// Posting: simulate a real HTTPS POST
-//
-
 /**
  * The worker gets called by the WP scheduler hourly. 
  * POST: simulates or performs a real POST. 
@@ -25,6 +20,8 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 function gcal_import_worker()
 {
     error_log ("gcal_import_worker started", 0);
+    error_log ("und wieder raus.");
+    return (0);
 
     /*
      * retrieve the proxy from the db, and if it exists, construct a context. 
@@ -71,6 +68,8 @@ function gcal_import_worker()
 
     error_log ("gcal_import_worker finished", 0);
 }	
+
+add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
 
 
 

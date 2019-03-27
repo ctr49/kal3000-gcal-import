@@ -28,32 +28,20 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 define ('GCAL_TABLE', 'gcal_import');
 define ('GCAL_GEO_TABLE', 'gcal_import_geocache');
 
-// we may need a http proxy for the fetch. Should be set from the admin page. 
-// define ('http_proxy', 'http://example.org:8080'); 
-
-
-/*
- * gcal-import-install
- * create DB table with:
- * - gcal_category - name of the calendar, for later per-unit display
- * - gcal_link - the public or private .ics link
- * - gcal_veranstalter - ?  
- * - gcal_active - flag if a calendar is active or not. Default active. 
- *
- */
 
 // The real work goes here. 
 require_once dirname( __FILE__ ) . "/gcal-import-worker.php"; 
 require_once dirname( __FILE__ ) . "/gcal-import-admin.php"; 
 
 
-// create custom scheduler	
+// create custom scheduler from custom option
 add_filter( 'cron_schedules', 'gcal_cron_interval' );
  
 function gcal_cron_interval( $schedules ) {
+    $interval = 60 * get_option( '_gcal_interval' ); // wir speichern Minuten
     $schedules['gcal_interval'] = array(
-        'interval' => get_option( '_gcal_interval' ) ,
-        'display'  => esc_html__( 'GCal fetch Interval' ),
+        'interval' => $interval,
+        'display'  => esc_html__( 'GCal fetch interval' ),
     );
     return $schedules;
 }
@@ -94,15 +82,19 @@ function gcal_import_activate()
     $wpdb->query("DELETE FROM $table WHERE 1=1");
     $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
         VALUES('Kreisverband', 'https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics', '1')");
+    $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
+        VALUES('Neufahrn', 'https://calendar.google.com/calendar/ical/gruene.neufahrn%40gmail.com/public/basic.ics', '1')");
+    $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
+        VALUES('Holledau', 'https://calendar.google.com/calendar/ical/gruene.holledau%40gmail.com/public/basic.ics', '0')");
 /*
     $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
 	    VALUES('ov-freising', '/tmp/neufahrn.ics', '1')");
 */
 
     // Create some plugin options in wp_options if they don't exist already
-    add_option( '_gcal_geocoding', 'off', '', 'no' );   // off, official or inofficial
+    add_option( '_gcal_geocoding', 'off', '', 'no' );   // off, official, inofficial, or OSM (experimental)
     add_option( '_gcal_apikey', '', '', 'no' );         // default empty
-    add_option( '_gcal_interval', '60', '', 'no' );     // default 60 minutes
+    add_option( '_gcal_interval', '5', '', 'no' );     // default 60 minutes
     
     // CREATE geocaching table if it does not exist already. 
     // the location field will be used only during development and debugging, and will be omitted in production. 
@@ -122,7 +114,7 @@ function gcal_import_activate()
     // do it once now! Won't work if the table hasn't been populated yet. 
     $result = $wpdb->query("SELECT gcal_category FROM $table");
     if ($result != 0) {
-        gcal_import_worker(); 
+  //      gcal_import_worker(); 
     }
     // and start the scheduler; 
     // in production, we will do this hourly. 
