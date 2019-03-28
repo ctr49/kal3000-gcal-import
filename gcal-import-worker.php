@@ -74,26 +74,33 @@ function gcal_import_worker()
     	$post_ids = $wpdb->get_results("SELECT post_id FROM $table WHERE
     	        meta_key = '_gcal_category' AND meta_value = '$unique_id'"); 
 */
+/*
         $term_id = $term->term_id ;       
         $post_ids = get_objects_in_term( $term_id, 'termine_type', $args );
     	foreach ($post_ids as $post_id) {
             error_log ("trashing post_id $post_id");
     		wp_trash_post($post_id); // should we DELETE here? 
     	}
-    
+*/    
 
 // die ganze Lösch-Logik ist Mist, weil immer wieder die gleichen termine gelöscht und neu angelegt werden, was Last auf WP bringt. 
-// besser: wir merken uns je Kalendereintrag die Google-UID und
-// - wenn der Eintrag schon existiert: nur updaten
-// - wenn nicht, neu anlegen
-// - wenn im Reply ein vorhandener Termin nicht vorkommt, wurde er wohl gelöscht, und raus damit. 
-// d.h. wir merken uns in postmeta zusätzlich die _gcal_uid. 
+// besser: wir merken uns je Kalendereintrag in postmeta die Google-UID und ein Flag "recent". 
+// - zu Beginn eines Update-Laufs werden die recent aller Google-UIDs auf false gesetzt. 
+// - wenn ein Eintrag schon existiert und die ICS-Version neuer ist als zeitstempel: nur updaten
+// - wenn UID noch nicht existiert, Termin neu anlegen
+// - in beiden Fällen recent = true setzen. 
+// - am Ende alle Google-UID mit recent==false löschen. Die kamen im ICS-Feed nicht mehr vor. 
+// d.h. wir merken uns in postmeta zusätzlich die _gcal_uid und _gcal_recent. 
 
+        // TODO: alle Posts der Kategorie suchen, die eine UID haben, und deren _recent auf false setzen. 
 
     	// jetzt die neuen Posts anlegen
         $link = $options[$unique_id];
         error_log ("now importing event cat $term->name, link $link");
     	gcal_import_do_import($term->name, $link);
+
+        // TODO: alle Posts mit der Kategorie, die eine UID haben und recent=false, löschen. 
+
     }	    
 
     error_log ("gcal_import_worker finished", 0);
@@ -257,6 +264,8 @@ function gcal_import_do_import($category, $link) {
 	$cal = new \om\IcalParser();
 	$results = $cal->parseFile($link);
 
+// TODO: Fehlerbehandlung, wenn der Link kaputt ist. Muss graceful passieren. 
+
     $file = dirname (__FILE__) . "/cal-$category-parsed.txt";
     file_put_contents ($file, var_export($results, TRUE));
 
@@ -374,14 +383,29 @@ function gcal_import_do_import($category, $link) {
             '_veranstalter' => '',
             '_veranstalterlnk' => '',
             '_zeitstempel' => $zeitstempel,
-//            '_gcal_category' => $category,
+            '_gcal_uid' = $r['UID'],
+            '_gcal_recent' = true,
+            '_gcal_created' = new DateTime('now')->format('d.m.Y H:i'),
+            '_gcal_category' => $category,
         );
 
         // debug
         $file = dirname (__FILE__) . '/' . $post->post_name . '-finished.txt';
         file_put_contents ( $file, var_export ($post, TRUE) );
 
-        $post_id = wp_insert_post( $post, false );
+        $post_id = // geht mit get_posts. SELECT post_id from postmeta WHERE _gcal_uid = $r['UID']
+        // existiert $postid? Wenn nicht -> insert_post
+        // wenn ja, prüfen, ob $r['LAST-MODIFIED'] > _created
+            // $r['LAST-MODIFIED'] > _created: update_post
+            // $r['LAST-MODIFIED'] == _created: nichts tun
+            // $r['LAST-MODIFIED'] < _created: schwerer Fehler, should not happen! nichts tun! 
+
+        if ( true ) { // Bedingung? 
+            $post->ID = 0 ; // vorhandene post_id holen! 
+            $post_id = wp_update_post( $post, false );
+        } else {  // not (exist)
+            $post_id = wp_insert_post( $post, false );
+        }
         // und dann noch die Terminkategorie zuweisen:
         wp_set_object_terms( $post_id, $category, 'termine_type' );
         error_log ("posted new post $post_id");
