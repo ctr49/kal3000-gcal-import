@@ -20,8 +20,10 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 function gcal_import_worker()
 {
     error_log ("gcal_import_worker started", 0);
+/*
     error_log ("und wieder raus.");
     return (0);
+*/
 
     /*
      * retrieve the proxy from the db, and if it exists, construct a context. 
@@ -34,7 +36,7 @@ function gcal_import_worker()
      * vi +809 ./wp-admin/includes/post.php function wp_write_post()
      
      */
-
+/*
     global $wpdb;
     $table = $wpdb->prefix.GCAL_TABLE;
     $categories = $wpdb->get_results("SELECT gcal_category, gcal_link from $table WHERE gcal_active = '1'");
@@ -50,20 +52,48 @@ function gcal_import_worker()
         $table = $wpdb->prefix . 'postmeta';
     	$post_ids = $wpdb->get_results("SELECT post_id FROM $table WHERE
     	        meta_key = '_gcal_category' AND meta_value = '$category->gcal_category'"); 
+*/
 
-// die ganze Logik ist Mist, weil immer wieder die gleichen termine gelöscht und neu angelegt werden, was Last auf WP bringt. 
+    $options = get_option('gcal_options');
+
+    $file = dirname ( __FILE__ ) . '/options.txt'; 
+    file_put_contents ($file, var_export($options, TRUE));
+    $terms = get_terms( array(
+                          'taxonomy' => 'termine_type',
+                          'hide_empty' => false,  ) 
+                    );
+    foreach($terms as $term){
+        $unique_id = 'gcal_feed_' . $term->name;
+        error_log ("found event category $unique_id");
+        if ( empty ( $options[$unique_id] ) || $options[$unique_id] == '' ) {
+            error_log ( "event category $term->name is not set; next");
+            continue;
+        }
+        // die Terminposts sind in postmeta:_gcal_category markiert: 
+/*        $table = $wpdb->prefix . 'postmeta';
+    	$post_ids = $wpdb->get_results("SELECT post_id FROM $table WHERE
+    	        meta_key = '_gcal_category' AND meta_value = '$unique_id'"); 
+*/
+        $term_id = $term->term_id ;       
+        $post_ids = get_objects_in_term( $term_id, 'termine_type', $args );
+    	foreach ($post_ids as $post_id) {
+            error_log ("trashing post_id $post_id");
+    		wp_trash_post($post_id); // should we DELETE here? 
+    	}
+    
+
+// die ganze Lösch-Logik ist Mist, weil immer wieder die gleichen termine gelöscht und neu angelegt werden, was Last auf WP bringt. 
 // besser: wir merken uns je Kalendereintrag die Google-UID und
 // - wenn der Eintrag schon existiert: nur updaten
 // - wenn nicht, neu anlegen
 // - wenn im Reply ein vorhandener Termin nicht vorkommt, wurde er wohl gelöscht, und raus damit. 
 // d.h. wir merken uns in postmeta zusätzlich die _gcal_uid. 
 
-    	foreach ($post_ids as $post_id) {
-            error_log ("trashing post_id $post_id->post_id");
-    		wp_trash_post($post_id->post_id); // should we DELETE here? 
-    	}
+
     	// jetzt die neuen Posts anlegen
-    	gcal_import_do_import($category->gcal_category, $category->gcal_link);
+        $link = $options[$unique_id];
+        error_log ("now importing event cat $term->name, link $link");
+    	gcal_import_do_import($term->name, $link);
     }	    
 
     error_log ("gcal_import_worker finished", 0);
@@ -89,29 +119,49 @@ function gcal_import_geoshow($location) {
 }
 
 
-/*
-function getHttpCode($http_response_header)
-{
-    if(is_array($http_response_header))
-    {
-        $parts=explode(' ',$http_response_header[0]);
-        if(count($parts)>1) //HTTP/1.0 <code> <text>
-            return intval($parts[1]); //Get code
-    }
-    return 0;
-}
-*/
+// TODO: den ganzen Geo-Kram in separate Datei auslagern. 
 
 
 function gcal_import_geocode($location) {
 
-    error_log ("entering gcal_import_geocode ($location)");
+    $options = get_option('gcal_options');
+    switch ( $options['gcal_geocoding'] ) {
+        case "official" :
+            return gcal_import_geocode_official($location);
+            break;
+        case "inofficial" :
+            return gcal_import_geocode_inofficial($location);
+            break;
+        case "osm" :
+            return gcal_import_geocode_osm($location);
+            break;
+        default:
+            return array ('','');
+    }
+}
+
+
+function gcal_import_geocode_official($location) {
+    return array ('','');
+}
+
+
+function gcal_import_geocode_osm($location) {
+    return array ('','');
+}
+
+
+function gcal_import_geocode_inofficial($location) {
+
+    error_log ("entering gcal_import_geocode_inofficial($location)");
     // we try to cache results as we will need many times the same results especially for recurring events.
     // we will use a hash for the location because the hash has a fixed length, while the location has not. 
     // This table will grow indefinitely over time, so we need to add a timestamp field and remove 
     // entries that are older than, say, 30 days each time. 
     // this will also cope with Google subtly changing location strings in Maps over time. 
     // new entries will thus replace outdated ones over time. 
+
+
     global $wpdb;
     $table = $wpdb->prefix.GCAL_GEO_TABLE;
 /*
@@ -138,7 +188,6 @@ function gcal_import_geocode($location) {
         error_log ("gcal_import_geocode found hash $hash lat $result[0] lon $result[1]");
         return ($result);
     } else {    
-
         // do the housekeeping first, before we create a new caching entry. 
         $outdated = time() - 2592000; // 30 Tage
         $query = "DELETE FROM $table WHERE gcal_geo_timestamp < $outdated";
@@ -146,25 +195,11 @@ function gcal_import_geocode($location) {
 
         $attempts = 0;
         $success = false;
-        // let's be a mobile Firefox Klar browser just for fun. 
-        $useragent = "User-Agent: Mozilla/5.0 (Android 7.0; Mobile; rv:62.0) Gecko/62.0 Firefox/62.0";
         // we'll need to be easy with GMaps in order no to get a 429 Too Many Requests. 
+        // max 3 retries with 2 second pauses, else we give up. 
         while ($success == false && $attempts < 3) {
             // @ = 'ignore_errors' => TRUE
             $url = "https://maps.google.com/maps?q=" . urlencode ($location);
-/*
-            // we use curl instead of file_get_contents because curl does many high level things e.g. redirects and cookies
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-            // but Google does not seem to like the useragent. The result is crap. 
-            // curl_setopt($ch, CURLOPT_USERAGENT, $useragent);
-            // später können wir noch einen proxy einbauen: 
-            // curl_setopt($ch, CURLOPT_PROXY, $proxy);
-            $result = curl_exec($ch);
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-*/
             // we use wp-remote.* instead of file_get_contents because it does many high level things e.g. redirects
             $response = wp_remote_get($url);
             $result = wp_remote_retrieve_body($response);
@@ -339,7 +374,7 @@ function gcal_import_do_import($category, $link) {
             '_veranstalter' => '',
             '_veranstalterlnk' => '',
             '_zeitstempel' => $zeitstempel,
-            '_gcal_category' => $category,
+//            '_gcal_category' => $category,
         );
 
         // debug
@@ -347,6 +382,8 @@ function gcal_import_do_import($category, $link) {
         file_put_contents ( $file, var_export ($post, TRUE) );
 
         $post_id = wp_insert_post( $post, false );
+        // und dann noch die Terminkategorie zuweisen:
+        wp_set_object_terms( $post_id, $category, 'termine_type' );
         error_log ("posted new post $post_id");
         // return ($post_id);
 	}
