@@ -28,27 +28,33 @@ Für eine solche Integration gibt es eine Reihe von Motivatoren:
 
 2. Als nächstes holt man sich das Plugin unter https://www.gruene-freising.de/... (Attachment) und installiert es über die WP-Oberfläche wie gewohnt. (TODO: Klären, ob das Plugin evtl. in Urwahl300 eingebaut wird, ansonsten evtl. offizielles WP-Plugin). 
 
-3. in WP legt man Terminkategorien an, z.B. eine pro OV und eine für den KV, plus weitere nach Bedarf. Das funktioniert am besten mit einer entsprechenden Seitenhierarchie wie auf https://www.gruene-freising.de/... . 
+Hinweis: kal3000-gcal-import nutzt für das Parsen von ICAL-Files und -Feeds das PHP-Modul icalparser (https://github.com/OzzyCzech/icalparser). Die Verwendung und die Einbindung in die Release-ZIP-Files erfolgt mit freundlicher Genehmigung des Autors Roman Ožana. 
 
-4. Im Admin-Teil des Plugins unter "Einstellungen / GCal Importer" erscheinen die angelegten Terminkategorien. Jeder Kategorie weist man dann einen öffentlichen Google-Kalender in Form des "public ics"-Links zu, beispielsweise <a href="https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics">https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics</a>. 
+## Konfiguration
 
-5. Im Admin-Teil kann man auch das Geocoding aktivieren. Das offizielle <a href="https://developers.google.com/maps/documentation/geocoding/start">Google-API</a> erfordert einen API-Key, der bei intensiver Nutzung nicht kostenlos ist. Alternativ dazu kann man den inoffiziellen Weg wählen, der ohne die API auskommt. Auf die Google-Policy wird hingewiesen.
+1. in WP legt man Terminkategorien an, z.B. eine pro OV und eine für den KV, plus weitere nach Bedarf. Das funktioniert am besten mit einer entsprechenden Seitenhierarchie wie auf https://www.gruene-freising.de/... . 
 
-6. Im Admin-Teil kann man das Zeitintervall einstellen, mit dem die Kalender synchronisiert werden. Standardeinstellung ist 60 Minuten.
+2. Im Admin-Teil des Plugins unter "Einstellungen / GCal Importer" erscheinen die angelegten Terminkategorien. Jeder Kategorie weist man dann einen öffentlichen Google-Kalender in Form des "public ics"-Links zu, beispielsweise <a href="https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics">https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics</a>. 
 
-7. Speichern und fertig.
+3. Im Admin-Teil kann man das Zeitintervall einstellen, mit dem die Kalender synchronisiert werden. Standardeinstellung ist 60 Minuten. Bitte beachten, dass der Wordpress-Scheduler die Zeitintervalle nur ungefähr und abhängig von der Seitenaktivität einhält. 
 
-8. Um die Termine in WP anzuzeigen, gibt es zwei Wege: Das Termine-Widget in der rechten Spalte zeigt immer alle Termine an. Pro OV kann man beispielsweise eine Unterseite mit dem Titel "OV Termine" anlegen, in der folgender Shortcode steht: <code>[wpcalendar kat=TERMINKATEGORIE]</code>. Auf dieser Seite werden dann nur die Termine des dazugehörigen OV angezeigt.
+4. Im Admin-Teil kann man das Geocoding aktivieren. Derzeit ist nur ein inoffizieller Weg über Google Maps verfügbar, den Google nicht gerne sieht. Das offizielle <a href="https://developers.google.com/maps/documentation/geocoding/start">Google-API</a> erfordert einen API-Key, der bei intensiver Nutzung nicht kostenlos ist. Auf die Google-Policy wird hingewiesen. Außerdem soll es irgendwann OpenStreetMap geben. 
 
-Mit Aktivieren des Plugins beginnt das Plugin sofort mit der Synchronisation.
+5. Speichern und fertig.
+
+## Benutzung
+
+Um die Termine in WP anzuzeigen, gibt es zwei Wege: Das Termine-Widget in der rechten Spalte zeigt immer alle Termine an. Darüber hinaus kann man beispielsweise pro OV eine Unterseite mit dem Titel "OV Termine" anlegen, in der folgender Shortcode steht: <code>[wpcalendar kat=TERMINKATEGORIE]</code>. Auf dieser Seite werden dann nur die Termine des dazugehörigen OV angezeigt.
+
+Mit "Aktivieren" beginnt das Plugin sofort mit der Synchronisation.
 
 ## Proxy-Konfiguration
 
-Das Plugin benötigt den Zugriff nach "draußen", um ICAL-Feeds zu holen oder auf Google Maps zuzugreifen. In Wordpress werden Proxy-Einstellungen in <code>/usr/share/wordpress/wp-config.php</code> bzw. auf Ubuntu / Debian in <code>/etc/wordpress/config-SITE.php</code> festgelegt. Zur Dokumentation bitte <a href="https://developer.wordpress.org/reference/classes/wp_http_proxy/">hier entlang</a>. 
+Das Plugin benötigt den Zugriff nach "draußen", um ICAL-Feeds zu holen oder auf Google Maps zuzugreifen. Wenn Du mit Deinem Wordpress-Server z.B. in einem Firmennetz bist, musst Du möglicherweise über einen Proxy nach draußen gehen. In Wordpress werden Proxy-Einstellungen in <code>/usr/share/wordpress/wp-config.php</code> bzw. auf Ubuntu / Debian in <code>/etc/wordpress/config-SITE.php</code> festgelegt. Zur Dokumentation bitte <a href="https://developer.wordpress.org/reference/classes/wp_http_proxy/">hier entlang</a>. 
 
 ## Support
 
-Support gibt es aktuell nur per E-Mail an <a href="mailto:obfuscated-mail@example.com">Harald Milz</a>.
+Bitte ein Ticket (issue) auf https://github.com/hmilz/kal3000-gcal-import öffnen! 
 
 ## Bekannte Fehler
 
