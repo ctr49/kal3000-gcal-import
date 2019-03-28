@@ -116,6 +116,7 @@ function gcal_geocoding_section_text() {
 function gcal_geocoding_setting_string() {
     $options = get_option('gcal_options');
     $current = ( isset ($options['gcal_geocoding']) ? $options['gcal_geocoding'] : 'off' ); // default off 
+    $apikey = ( isset ($options['gcal_apikey']) ? $options['gcal_apikey'] : '' ); // default empty
 
     $coders = array( 
                     array( 
@@ -124,7 +125,7 @@ function gcal_geocoding_setting_string() {
                     ),             
                     array( 
                         'option' => 'official',
-                        'name' => 'Google official (in Entwicklung; erfordert einen API Key)',
+                        'name' => 'Google official - in Entwicklung; erfordert einen API Key --> ',
                     ),             
                     array( 
                         'option' => 'inofficial',
@@ -132,13 +133,18 @@ function gcal_geocoding_setting_string() {
                     ),             
                     array( 
                         'option' => 'osm',
-                        'name' => 'OpenStreetMap (in Entwicklung)',
+                        'name' => 'OpenStreetMap - in Entwicklung',
                     ),             
                 );
     
     foreach ( $coders as $coder ) {
         $checked = ( $current == $coder['option'] ? 'checked' : '' );
-        echo '<input type="radio" id="gcal_geocoding" name="gcal_options[gcal_geocoding]" value ="' . $coder['option'] . '" ' . $checked . '> ' . $coder['name'] . '</br>' ;
+        echo '<input type="radio" id="gcal_geocoding" name="gcal_options[gcal_geocoding]" value ="' . $coder['option'] . '" ' . $checked . '> ' . $coder['name'];
+        if ( $coder['option'] == 'official' ) {
+            echo '<input type="text" size="32" id="gcal_geocoding" name="gcal_options[gcal_apikey]" value="' . $apikey . '">';
+        }
+
+        echo '</br>' ;
     }
     
 }
