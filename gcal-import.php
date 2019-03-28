@@ -39,7 +39,7 @@ add_filter( 'cron_schedules', 'gcal_cron_interval' );
  
 function gcal_cron_interval( $schedules ) {
     $options = get_option('gcal_options');
-    $current = ( isset ($options['gcal_geocoding']) ? $options['gcal_geocoding'] : '60' ); // default 60 minutes 
+    $current = ( isset ($options['gcal_timer']) ? $options['gcal_timer'] : '60' ); // default 60 minutes 
     $interval = 60 * $current; // wir speichern Minuten
     $schedules['gcal_interval'] = array(
         'interval' => $interval,
