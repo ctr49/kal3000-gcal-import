@@ -30,7 +30,7 @@ Für eine solche Integration gibt es eine Reihe von Motivatoren:
 
 3. in WP legt man Terminkategorien an, z.B. eine pro OV und eine für den KV, plus weitere nach Bedarf. Das funktioniert am besten mit einer entsprechenden Seitenhierarchie wie auf https://www.gruene-freising.de/... . 
 
-4. Im Admin-Teil des Plugins erscheinen die angelegten Terminkategorien. Jeder Kategorie weist man dann einen öffentlichen Google-Kalender in Form des "public ics"-Links zu, beispielsweise <a href="https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics">https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics</a>. 
+4. Im Admin-Teil des Plugins unter "Einstellungen / GCal Importer" erscheinen die angelegten Terminkategorien. Jeder Kategorie weist man dann einen öffentlichen Google-Kalender in Form des "public ics"-Links zu, beispielsweise <a href="https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics">https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics</a>. 
 
 5. Im Admin-Teil kann man auch das Geocoding aktivieren. Das offizielle <a href="https://developers.google.com/maps/documentation/geocoding/start">Google-API</a> erfordert einen API-Key, der bei intensiver Nutzung nicht kostenlos ist. Alternativ dazu kann man den inoffiziellen Weg wählen, der ohne die API auskommt. Auf die Google-Policy wird hingewiesen.
 
@@ -48,8 +48,11 @@ Das Plugin benötigt den Zugriff nach "draußen", um ICAL-Feeds zu holen oder au
 
 ## Support
 
-Support gibt es aktuell nur per E-Mail an <a href="mailto:hm@seneca.muc.de">Harald Milz</a>. (TODO: Obfuscate mail adsress)
+Support gibt es aktuell nur per E-Mail an <a href="mailto:obfuscated-mail@example.com">Harald Milz</a>.
 
+## Bekannte Fehler
+
+Vermutlich viele. Ich bin alles andere als ein begnadeter Programmierer. 
 
 ## Internationalization
 
