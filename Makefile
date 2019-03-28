@@ -17,7 +17,8 @@ icalparser:
 
 release: icalparser 
 	cd .. ; \
-	zip -9 -r $(NAME)-$(VERSION).zip $(NAME)/$(ICALPARSER)/readme.md $(NAME)/$(ICALPARSER)/src/* $(NAME)/$(ICALPARSER)/tools/* $(NAME)/*.php $(NAME)/readme.* $(NAME)/README.*
+	rm -f  $(NAME)-$(VERSION).zip ; \
+	zip -9 -r $(NAME)-$(VERSION).zip $(NAME)/$(ICALPARSER)/readme.md $(NAME)/$(ICALPARSER)/LICENSE $(NAME)/$(ICALPARSER)/src/* $(NAME)/$(ICALPARSER)/tools/* $(NAME)/*.php $(NAME)/readme.* $(NAME)/README.*
 
 
 install: icalparser
