@@ -30,6 +30,45 @@ function gcal_import_geocode($location) {
     // this will also cope with Google subtly changing location strings in Maps over time. 
     // new entries will thus replace outdated ones over time. 
 
+/*
+Caching neu: in wp_options-> gcal_options ein Array geocache anlegen. Darunter für jeden hash ein Array schreiben, also: 
+
+Datenmodell:
+
+$geocache = array (
+        hash1 = array (
+            'gcal_geo_lat' => '',
+            'gcal_geo_lon' => '',
+            'gcal_geo_timestamp' => 0,
+        ),
+        hash2 = array ... 
+        ); 
+
+
+Schreiben: 
+$options = get_options ( 'gcal_options' );
+
+$geocache = $options ( 'geocache' );
+$geocache['hashx'] = array ( $lat, $lon, time(), ); 
+
+$options ( 'geocache' ) = $geocache; 
+
+Löschen: 
+
+foreach ( $geocache as $key => $value ) {
+    if ( $key['gcal_geo_timestamp'] < time() - 2592000 ) {
+        unset ( $options['geocache']['hashx'] )
+    }
+}
+
+set_options ( 'gcal_options' );
+
+Suchen: if ( isset ( $options['geocache']['hashx'] ) ) ... 
+
+
+
+*/
+
     // check the cache first
     global $wpdb;
     $table = $wpdb->prefix.GCAL_GEO_TABLE;
