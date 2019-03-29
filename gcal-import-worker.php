@@ -7,18 +7,18 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 // we'll set this as category => proxy, link => link, active => 0; 
 // in the admin page, all entries will be displayed with a checkbox for activating, deactivating, deleting. 
 
+require_once dirname ( __FILE__ ) . "/gcal-import-geocode.php"; 
 
 
 /**
- * The worker gets called by the WP scheduler hourly. 
- * POST: simulates or performs a real POST. 
+ * The worker gets called by the WP scheduler. 
  *
  * @since 0.1.0
  *
  */
 
-function gcal_import_worker()
-{
+function gcal_import_worker() {
+
     error_log ("gcal_import_worker started", 0);
 /*
     error_log ("und wieder raus.");
@@ -30,29 +30,7 @@ function gcal_import_worker()
      * TODO: USER:PASS in DB. 
      *
      * http://www.pirob.com/2013/06/php-using-getheaders-and-filegetcontents-functions-behind-proxy.html
-
-
-     * http://ubuntu1804/site/wp-admin/post.php?post=128&action=edit
-     * vi +809 ./wp-admin/includes/post.php function wp_write_post()
-     
      */
-/*
-    global $wpdb;
-    $table = $wpdb->prefix.GCAL_TABLE;
-    $categories = $wpdb->get_results("SELECT gcal_category, gcal_link from $table WHERE gcal_active = '1'");
-    if ($wpdb->num_rows == 0) {
-        error_log ("keine Einträge in $wpdb->prefix.GCAL_TABLE gefunden.");
-        return (0);
-    }
-    $file = dirname (__FILE__) . '/categories.txt'; 
-    file_put_contents ($file, var_export ($categories, TRUE)); 
-
-    foreach ( $categories as $category) {
-        error_log ("found category $category->gcal_category");
-        $table = $wpdb->prefix . 'postmeta';
-    	$post_ids = $wpdb->get_results("SELECT post_id FROM $table WHERE
-    	        meta_key = '_gcal_category' AND meta_value = '$category->gcal_category'"); 
-*/
 
     $options = get_option('gcal_options');
 
@@ -107,149 +85,6 @@ function gcal_import_worker()
 }	
 
 add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
-
-
-
-function gcal_import_geocity($location) {
-
-    // Wenn die Adresse im Feld Stadt steht, wird sie richtig angezeigt, ergo:
-    return ($location); 
-
-}
-
-
-function gcal_import_geoshow($location) {
-
-    // later
-    return ''; 
-
-}
-
-
-// TODO: den ganzen Geo-Kram in separate Datei auslagern. 
-
-
-function gcal_import_geocode($location) {
-
-    $options = get_option('gcal_options');
-    switch ( $options['gcal_geocoding'] ) {
-        case "official" :
-            return gcal_import_geocode_official($location);
-            break;
-        case "inofficial" :
-            return gcal_import_geocode_inofficial($location);
-            break;
-        case "osm" :
-            return gcal_import_geocode_osm($location);
-            break;
-        default:
-            return array ('','');
-    }
-}
-
-
-function gcal_import_geocode_official($location) {
-    return array ('','');
-}
-
-
-function gcal_import_geocode_osm($location) {
-    return array ('','');
-}
-
-
-function gcal_import_geocode_inofficial($location) {
-
-    error_log ("entering gcal_import_geocode_inofficial($location)");
-    // we try to cache results as we will need many times the same results especially for recurring events.
-    // we will use a hash for the location because the hash has a fixed length, while the location has not. 
-    // This table will grow indefinitely over time, so we need to add a timestamp field and remove 
-    // entries that are older than, say, 30 days each time. 
-    // this will also cope with Google subtly changing location strings in Maps over time. 
-    // new entries will thus replace outdated ones over time. 
-
-
-    global $wpdb;
-    $table = $wpdb->prefix.GCAL_GEO_TABLE;
-/*
-    // CREATE table if it does not exist already. 
-    $query = "CREATE TABLE IF NOT EXISTS $table (
-        id INT(9) NOT NULL AUTO_INCREMENT,
-        gcal_geo_hash VARCHAR(40) NOT NULL,
-        gcal_geo_lat VARCHAR(20) NOT NULL,
-        gcal_geo_lon VARCHAR(20) NOT NULL,
-        gcal_geo_timestamp DATETIME NOT NULL,
-	    UNIQUE KEY id (id)
-    );";
-    $wpdb->query($query);
-*/
-
-    $hash = hash ('md5', $location); 
-    $query = "SELECT gcal_geo_lat, gcal_geo_lon FROM $table WHERE gcal_geo_hash = '$hash'";
-    error_log ("gcal_import_geocode looking up hash $hash location $location");
-    error_log ("query: $query");
-    $result = $wpdb->get_row( $query, ARRAY_N );
-    $file = dirname (__FILE__) . "/$hash-lookup-result.txt";
-    file_put_contents ($file, var_export ($result, TRUE));
-    if ( $wpdb->num_rows == 1 ) { // it should only be a single row! 
-        error_log ("gcal_import_geocode found hash $hash lat $result[0] lon $result[1]");
-        return ($result);
-    } else {    
-        // do the housekeeping first, before we create a new caching entry. 
-        $outdated = time() - 2592000; // 30 Tage
-        $query = "DELETE FROM $table WHERE gcal_geo_timestamp < $outdated";
-        $wpdb->query($query);
-
-        $attempts = 0;
-        $success = false;
-        // we'll need to be easy with GMaps in order no to get a 429 Too Many Requests. 
-        // max 3 retries with 2 second pauses, else we give up. 
-        while ($success == false && $attempts < 3) {
-            // @ = 'ignore_errors' => TRUE
-            $url = "https://maps.google.com/maps?q=" . urlencode ($location);
-            // we use wp-remote.* instead of file_get_contents because it does many high level things e.g. redirects
-            $response = wp_remote_get($url);
-            $result = wp_remote_retrieve_body($response);
-            $http_code = wp_remote_retrieve_response_code($response);
-            if (200 == $http_code) {
-                $success = true;
-            } elseif (429 == $http_code) {
-                time.sleep(2);  
-                ++$attempts; 
-                error_log ("got $attempts HTTP 429 Too Many Requests on $url");
-            } else {
-                error_log ("Ärgerlicher HTTP Fehler $http_code");
-                return array (' ', ' ');
-            }
-        }
-    
-        // ok so $result seems to be valid.
-        $file = dirname (__FILE__) . "/$hash-result.html";
-        file_put_contents ($file, $result);
-        // and now we need to look for:
-        $pattern = '#www.google.com/maps/preview/place/[^/]+/@([\d\.]+),([\d\.]+),.*#';
-        preg_match ($pattern, $result, $matches);
-        $file = dirname (__FILE__) . "/$hash-matches.html";
-        file_put_contents ($file, var_export ($matches, TRUE));
-        error_log ("gcal_import_geocode geocoded lat=$matches[1] lon=$matches[2] for hash $hash");
-
-        // do the caching now, but only if both values are set. 
-        // $wpdb_insert does all the sanitizing for us. 
-        if ($matches[1] != "" && $matches[2] != "") {
-            $wpdb->insert($table, array(
-                'gcal_geo_location' => substr( $location, 0, 128 ),
-                'gcal_geo_hash' => $hash,
-                'gcal_geo_lat' => $matches[1],
-                'gcal_geo_lon' => $matches[2], 
-                'gcal_geo_timestamp' => time(),
-            ));
-        }
-
-        // error handling? 
-        // and return the result: 
-        return array ($matches[1], $matches[2]); 
-    }
-}
 
 
 function gcal_import_do_import($category, $link) {
