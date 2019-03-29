@@ -44,40 +44,61 @@ function gcal_import_worker() {
         $unique_id = 'gcal_feed_' . $term->name;
         error_log ("found event category $unique_id");
         if ( empty ( $options[$unique_id] ) || $options[$unique_id] == '' ) {
-            error_log ( "event category $term->name is not set; next");
+            error_log ( "event category $term->name is not known; next");
             continue;
         }
-        // die Terminposts sind in postmeta:_gcal_category markiert: 
-/*        $table = $wpdb->prefix . 'postmeta';
-    	$post_ids = $wpdb->get_results("SELECT post_id FROM $table WHERE
-    	        meta_key = '_gcal_category' AND meta_value = '$unique_id'"); 
-*/
+
 /*
-        $term_id = $term->term_id ;       
-        $post_ids = get_objects_in_term( $term_id, 'termine_type', $args );
-    	foreach ($post_ids as $post_id) {
-            error_log ("trashing post_id $post_id");
-    		wp_trash_post($post_id); // should we DELETE here? 
-    	}
-*/    
+The update and delete logic goes as follows: 
+- before we start updating, we mark all entries from this event category with recent = false. (i.e. outdated). 
+- when we scan the ICS feed, 
+  - if an entry with the same UID exists and was not updated in the meantime: do nothing. 
+  - if it was updated in the meantime, we update our entry and set recent to true
+  - if no such entry exists, we insert a new one and set recent to true
+- when we're finished, we delete all entries from this event category which still have recent set to false. 
+  Apparently, they were deleted on the remote end. 
+*/
 
-// die ganze Lösch-Logik ist Mist, weil immer wieder die gleichen termine gelöscht und neu angelegt werden, was Last auf WP bringt. 
-// besser: wir merken uns je Kalendereintrag in postmeta die Google-UID und ein Flag "recent". 
-// - zu Beginn eines Update-Laufs werden die recent aller Google-UIDs auf false gesetzt. 
-// - wenn ein Eintrag schon existiert und die ICS-Version neuer ist als zeitstempel: nur updaten
-// - wenn UID noch nicht existiert, Termin neu anlegen
-// - in beiden Fällen recent = true setzen. 
-// - am Ende alle Google-UID mit recent==false löschen. Die kamen im ICS-Feed nicht mehr vor. 
-// d.h. wir merken uns in postmeta zusätzlich die _gcal_uid und _gcal_recent. 
+        // so we look for all published event posts in the event category 
+        $args = array (
+            'post_type'   => 'termine',
+            'meta_key'    => '_gcal_category',
+            'meta_value'  => $term->name,
+            'post_status' => 'publish',
+            )
+        );
+        $post_ids = get_posts( $args );
+        // and set their recent flag to false. 
+        foreach( $post_ids as $post_id ) {
+            update_post_meta( $post_id, '_gcal_recent', false, );
+        }  
 
-        // TODO: alle Posts der Kategorie suchen, die eine UID haben, und deren _recent auf false setzen. 
-
-    	// jetzt die neuen Posts anlegen
+    	// now we process the current feed. 
         $link = $options[$unique_id];
         error_log ("now importing event cat $term->name, link $link");
     	gcal_import_do_import($term->name, $link);
 
-        // TODO: alle Posts mit der Kategorie, die eine UID haben und recent=false, löschen. 
+        // look if there are any published event posts in the current event category which were not posted anew or updated (ie recent == false)
+        $args = array (
+            'post_type'   => 'termine',
+            'post_status' => 'publish',
+            'meta_query'  => array(
+                array(
+                    'key'     => '_gcal_category',
+                    'value'   => $term->name,
+                ), 
+                array(
+                    'key'     => '_gcal_recent',
+                    'value'   => false,
+                ),        
+            )
+        );
+        $post_ids = get_posts( $args );
+        // and trash them. 
+        foreach( $post_ids as $post_id ) {
+            wp_trash_post( $post_id );
+            error_log ("Event post $post_id gelöscht.");
+        }  
 
     }	    
 
@@ -112,7 +133,7 @@ function gcal_import_do_import($category, $link) {
         wp_set_auth_cookie( $user_id );
     }
 	foreach ($cal->getSortedEvents() as $r) {
-        // wenn DTEND in der Vergangenheit liegt, nicht mehr posten. Next. 
+        // if DTEND lies in the past, this event has ended. Ignore. 
         $now = new DateTime(); 
 //        $dtend = new DateTime($r['DTEND']);
         $summary = $r['SUMMARY'];
@@ -220,7 +241,7 @@ function gcal_import_do_import($category, $link) {
             '_zeitstempel' => $zeitstempel,
             '_gcal_uid' = $r['UID'],
             '_gcal_recent' = true,
-            '_gcal_created' = new DateTime('now')->format('d.m.Y H:i'),
+            '_gcal_created' = $r['LAST-MODIFIED']->format('d.m.Y H:i'),
             '_gcal_category' => $category,
         );
 
@@ -228,24 +249,43 @@ function gcal_import_do_import($category, $link) {
         $file = dirname (__FILE__) . '/' . $post->post_name . '-finished.txt';
         file_put_contents ( $file, var_export ($post, TRUE) );
 
-        $post_id = // geht mit get_posts. SELECT post_id from postmeta WHERE _gcal_uid = $r['UID']
-        // existiert $postid? Wenn nicht -> insert_post
-        // wenn ja, prüfen, ob $r['LAST-MODIFIED'] > _created
-            // $r['LAST-MODIFIED'] > _created: update_post
-            // $r['LAST-MODIFIED'] == _created: nichts tun
-            // $r['LAST-MODIFIED'] < _created: schwerer Fehler, should not happen! nichts tun! 
-
-        if ( true ) { // Bedingung? 
-            $post->ID = 0 ; // vorhandene post_id holen! 
-            $post_id = wp_update_post( $post, false );
-        } else {  // not (exist)
+        // so we have the new posts's attributes. Now we need to decide what to do with it.  Jetzt müssen wir entscheiden, was damit zu tun ist. 
+        // first, we try to find a published post with the same UID: 
+        $args = array (
+            'post_type'   => 'termine',
+            'meta_key'    => '_gcal_uid',
+            'meta_value'  => $r['UID'],
+            'post_status' => 'publish',
+            )
+        );
+        $post_ids = get_posts( $args );  
+        // did we find one? (It should really be only one!) 
+        if ( empty ( $post_ids ) ) {
+            // ok, none found, so we insert the new one
             $post_id = wp_insert_post( $post, false );
-        }
-        // und dann noch die Terminkategorie zuweisen:
-        wp_set_object_terms( $post_id, $category, 'termine_type' );
-        error_log ("posted new post $post_id");
-        // return ($post_id);
+            // and assign the taxonomy type and event category. 
+            wp_set_object_terms( $post_id, $category, 'termine_type' );
+            error_log ("posted new post $post_id");
+        } else {
+            // good, the post exists already. 
+            $post_id = $post_ids[0];
+            $created = get_post_meta( $post_id, '_gcal_created' );
+            // was it updated on the remote calendar? (was if modified after it was created remotely?) 
+            if ( $r['LAST-MODIFIED'] > $created ) {
+                // yes, so we update the existing post. We don't care _what_ changed. 
+                $post->ID = $post_id ; 
+                $post_id = wp_update_post( $post, false );
+                error_log ("updated post $post_id");
+            } elseif ( $r['LAST-MODIFIED'] == $created ) { 
+                // it was not modified after we created it, so we do nothing! 
+            } elseif ( $r['LAST-MODIFIED'] < $created ) {
+                // iiiiek! A time reversal or a secret time machine! That should not happen! 
+                error_log ("Warnung: merkwürdiges last-modified Datum beim Update von Post $post_id!");
+            }
+        } 
+        // and on the next entry. 
 	}
+    // foreach end. we're finished. 
 }  
 
 
