@@ -44,7 +44,7 @@ function gcal_import_worker() {
         $unique_id = 'gcal_feed_' . $term->name;
         error_log ("found event category $unique_id");
         if ( empty ( $options[$unique_id] ) || $options[$unique_id] == '' ) {
-            error_log ( "event category $term->name is not known; next");
+            error_log ( "link for event category $term->name is not known; next");
             continue;
         }
 
@@ -60,19 +60,23 @@ The update and delete logic goes as follows:
 */
 
         // so we look for all published event posts in the event category 
+        // TODO that have a UID (because those without were posted locally!) 
         $args = array (
             'post_type'   => 'termine',
             'meta_key'    => '_gcal_category',
             'meta_value'  => $term->name,
             'post_status' => 'publish',
-            )
         );
         $post_ids = get_posts( $args );
+        $file = dirname (__FILE__) . "/post_ids_" . $term->name . "_all.txt";
+        file_put_contents($file, var_export ($post_ids, TRUE));
         // and set their recent flag to false. 
-        foreach( $post_ids as $post_id ) {
-            update_post_meta( $post_id, '_gcal_recent', false, );
-        }  
-
+        if(is_array($post_ids)) {
+            foreach( $post_ids as $post_id ) {
+                $id = $post_id->ID;
+                update_post_meta( $id, '_gcal_recent', false );
+            }  
+        }
     	// now we process the current feed. 
         $link = $options[$unique_id];
         error_log ("now importing event cat $term->name, link $link");
@@ -95,13 +99,17 @@ The update and delete logic goes as follows:
         );
         $post_ids = get_posts( $args );
         // and trash them. 
-        foreach( $post_ids as $post_id ) {
-            wp_trash_post( $post_id );
-            error_log ("Event post $post_id gelöscht.");
-        }  
+        $file = dirname (__FILE__) . "/post_ids_" . $term->name . "_trash.txt";
+        file_put_contents($file, var_export ($post_ids, TRUE));
+        if(is_array($post_ids)) {
+            foreach( $post_ids as $post_id ) {
+                $id = $post_id->ID;
+                wp_trash_post( $id );
+                error_log ("Event post $_id gelöscht.");
+            }  
+        }
 
     }	    
-
     error_log ("gcal_import_worker finished", 0);
 }	
 
@@ -198,7 +206,6 @@ function gcal_import_do_import($category, $link) {
         $post->post_title = apply_filters( 'default_title', $post_title, $post );
         $post->post_excerpt = apply_filters( 'default_excerpt', $post_excerpt, $post );
 
-
         $file = dirname (__FILE__) . '/' . 'post-defaults.txt';
         file_put_contents ( $file, var_export ($post, TRUE) );
 
@@ -239,9 +246,9 @@ function gcal_import_do_import($category, $link) {
             '_veranstalter' => '',
             '_veranstalterlnk' => '',
             '_zeitstempel' => $zeitstempel,
-            '_gcal_uid' = $r['UID'],
-            '_gcal_recent' = true,
-            '_gcal_created' = $r['LAST-MODIFIED']->format('d.m.Y H:i'),
+            '_gcal_uid' => $r['UID'],
+            '_gcal_recent' => true,
+            '_gcal_created' => $r['LAST-MODIFIED']->format('d.m.Y H:i'),
             '_gcal_category' => $category,
         );
 
@@ -256,24 +263,28 @@ function gcal_import_do_import($category, $link) {
             'meta_key'    => '_gcal_uid',
             'meta_value'  => $r['UID'],
             'post_status' => 'publish',
-            )
         );
         $post_ids = get_posts( $args );  
         // did we find one? (It should really be only one!) 
         if ( empty ( $post_ids ) ) {
             // ok, none found, so we insert the new one
             $post_id = wp_insert_post( $post, false );
+            // pretend we're a human:
+            update_post_meta( $post_id, '_edit_last', $user_id );
+            $now = time();
+            $lock = "$now:$user_id";
+            update_post_meta( $post_id, '_edit_lock', $lock );
             // and assign the taxonomy type and event category. 
             wp_set_object_terms( $post_id, $category, 'termine_type' );
             error_log ("posted new post $post_id");
         } else {
             // good, the post exists already. 
-            $post_id = $post_ids[0];
-            $created = get_post_meta( $post_id, '_gcal_created' );
+            $id = $post_ids[0]->ID;
+            $created = get_post_meta( $id, '_gcal_created' );
             // was it updated on the remote calendar? (was if modified after it was created remotely?) 
             if ( $r['LAST-MODIFIED'] > $created ) {
                 // yes, so we update the existing post. We don't care _what_ changed. 
-                $post->ID = $post_id ; 
+                $post->ID = $id ; 
                 $post_id = wp_update_post( $post, false );
                 error_log ("updated post $post_id");
             } elseif ( $r['LAST-MODIFIED'] == $created ) { 
