@@ -1,63 +1,55 @@
-=== Test Plugin ===
-Contributors: user, user, user
-Tags: tag, tag, tag
-Donate link: http://example.com/
+=== Kal3000 Google Calender Importer ===
+Contributors: hmilz
+Tags: kal3000, urwahl3000, calendar
+Donate link: https://www.paypal.me/HaraldMilz
 Requires at least: 4.0
-Tested up to: 4.8
-Requires PHP: 5.6
-Stable tag: 1.1
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Tested up to: 4.9
+Requires PHP: 7.2
+Stable tag: 0.2.0
+License: GPLv3 or later
+License URI: https://www.gnu.org/licenses/gpl-3.0
 
-Short description of this great plugin. No more than 150 characters, no markup.
+Imports and Merges an Arbitrary Number of Public Google Calendars into Kal3000. 
 
-== Description ==
-Long description of this great plugin. No characters limit, and you can use markdown.
+== Beschreibung ==
+Ein Wordpress-Plugin, das auf das Grüne Wordpress-Theme <a href="http://kre8tiv.de/urwahl3000/">Urwahl3000</a> aufsetzt und eine Integration beliebig vieler öffentlicher Google-Kalender ermöglicht. 
 
-For backwards compatibility, if this section is missing, the full length of the short description will be used, and
-markdown parsed.
+Das hier ist noch "work in progress", und es ist noch nicht produktiv benutzbar! Das Plugin könnte Dein Wordpress zerschießen, Deinen Kreis- oder Ortsverband versehentlich auflösen oder den Klimawandel beschleunigen! Aber für mich funktioniert es schon recht ordentlich. 
 
-Ordered list:
+* Administration in Wordpress über die Admin-Oberfläche.
+* Einbinden beliebig vieler Google-Kalender.
+* Zuordnung dieser Google-Kalender zu bereits angelegten Terminkategorien, beispielsweise je OV.
+* Geocoding von Veranstaltungsorten, wie sie aus Google Kalender übernommen werden. Derart angelegte Termine werden auf der Übersichtskarte richtig angezeigt.
 
-1. Some feature
-1. Another feature
-1. Something else about the plugin
-
-Unordered list:
-
-* something
-* something else
-* third thing
-
-Link to [WordPress](http://wordpress.org/ "Your favorite software") and one to [Markdown's Syntax Documentation][markdown syntax].
-
-Titles are optional, naturally.
-
-Asterisks for *emphasis*.
-
-Double it up  for **strong**.
 
 == Installation ==
-1. Upload "test-plugin.php" to the "/wp-content/plugins/" directory.
-1. Activate the plugin through the "Plugins" menu in WordPress.
-1. Place "do_action( 'plugin_name_hook' );" in your templates.
+
+1. Um eine auf Urwahl3000 und Wordpress basierende KV- oder OV-Seite betreiben zu können, braucht man zunächst eine irgendwo gehostete aktuelle Wordpress-Umgebung. Dazu wird auf die Dokumentation von Urwahl3000 verwiesen.
+
+2. Als nächstes holt man sich das Plugin unter https://www.gruene-freising.de/... (Attachment) und installiert es über die WP-Oberfläche wie gewohnt.  
+
+Hinweis: kal3000-gcal-import nutzt für das Parsen von ICAL-Files und -Feeds das PHP-Modul icalparser (https://github.com/OzzyCzech/icalparser). Die Verwendung und die Einbindung in die Release-ZIP-Files erfolgt mit freundlicher Genehmigung des Autors Roman Ožana. 
+
+== Konfiguration ==
+
+1. in WP legt man Terminkategorien an, z.B. eine pro OV und eine für den KV, plus weitere nach Bedarf. Das funktioniert am besten mit einer entsprechenden Seitenhierarchie wie auf https://www.gruene-freising.de/... . 
+
+2. Im Admin-Teil des Plugins unter "Einstellungen / GCal Importer" erscheinen die angelegten Terminkategorien. Jeder Kategorie weist man dann einen öffentlichen Google-Kalender in Form des "public ics"-Links zu, beispielsweise <a href="https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics">https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics</a>. 
+
+3. Im Admin-Teil kann man das Zeitintervall einstellen, mit dem die Kalender synchronisiert werden. Standardeinstellung ist 60 Minuten. Bitte beachten, dass der Wordpress-Scheduler die Zeitintervalle nur ungefähr und abhängig von der Seitenaktivität einhält. 
+
+4. Im Admin-Teil kann man das Geocoding aktivieren. Derzeit ist nur ein inoffizieller Weg über Google Maps verfügbar, den Google nicht gerne sieht. Das offizielle <a href="https://developers.google.com/maps/documentation/geocoding/start">Google-API</a> erfordert einen API-Key, der bei intensiver Nutzung nicht kostenlos ist. Auf die Google-Policy wird hingewiesen. Außerdem soll es irgendwann OpenStreetMap geben. 
+
+5. Speichern und fertig.
+
 
 == Frequently Asked Questions ==
-= A question that someone might have =
-An answer to that question.
 
-= What about foo bar? =
-Answer to foo bar dilemma.
-
-== Screenshots ==
-1. The screenshot description corresponds to screenshot-1.(png|jpg|jpeg|gif).
-2. The screenshot description corresponds to screenshot-2.(png|jpg|jpeg|gif).
-3. The screenshot description corresponds to screenshot-3.(png|jpg|jpeg|gif).
+Keine bisher. 
 
 == Changelog ==
 = 0.2 =
-* A change since the previous version.
-* Another change.
+* First fully functioning release. 
 
 = 0.1 =
 * Initial release.
@@ -68,3 +60,4 @@ Upgrade notices describe the reason a user should upgrade
 
 = 0.1 =
 This version fixes a security related bug. Upgrade immediately.
+

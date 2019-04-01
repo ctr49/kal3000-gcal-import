@@ -1,10 +1,12 @@
 # kal3000-gcal-import
 
-Ein Wordpress-Plugin, das auf das Grüne Wordpress-Theme <a href="http://kre8tiv.de/urwahl3000/">Urwahl3000</a> aufsetzt und eine Integration beliebig vieler öffentlicher Google-Kalender ermöglicht.   
+Ein Wordpress-Plugin, das auf das Grüne Wordpress-Theme <a href="http://kre8tiv.de/urwahl3000/">Urwahl3000</a> aufsetzt und eine Integration beliebig vieler öffentlicher Google-Kalender ermöglicht.
+
+Version: 0.2.0 (stable) 
   
 ## Warnung
 
-Das hier ist noch "work in progress", und es ist noch nicht benutzbar!   
+Das hier ist noch "work in progress", und es ist noch nicht produktiv benutzbar! Das Plugin könnte Dein Wordpress zerschießen, Deinen Kreis- oder Ortsverband versehentlich auflösen oder den Klimawandel beschleunigen! Aber für mich funktioniert es schon recht ordentlich. 
 
 ## Motivation
 
@@ -26,7 +28,7 @@ Für eine solche Integration gibt es eine Reihe von Motivatoren:
 
 1. Um eine auf Urwahl3000 und Wordpress basierende KV- oder OV-Seite betreiben zu können, braucht man zunächst eine irgendwo gehostete aktuelle Wordpress-Umgebung. Dazu wird auf die Dokumentation von Urwahl3000 verwiesen.
 
-2. Als nächstes holt man sich das Plugin unter https://www.gruene-freising.de/... (Attachment) und installiert es über die WP-Oberfläche wie gewohnt. (TODO: Klären, ob das Plugin evtl. in Urwahl300 eingebaut wird, ansonsten evtl. offizielles WP-Plugin). 
+2. Als nächstes holt man sich das Plugin unter https://www.gruene-freising.de/... (Attachment) und installiert es über die WP-Oberfläche wie gewohnt. 
 
 Hinweis: kal3000-gcal-import nutzt für das Parsen von ICAL-Files und -Feeds das PHP-Modul icalparser (https://github.com/OzzyCzech/icalparser). Die Verwendung und die Einbindung in die Release-ZIP-Files erfolgt mit freundlicher Genehmigung des Autors Roman Ožana. 
 
@@ -54,7 +56,7 @@ Das Plugin benötigt den Zugriff nach "draußen", um ICAL-Feeds zu holen oder au
 
 ## Support
 
-Bitte ein Ticket (issue) auf https://github.com/hmilz/kal3000-gcal-import öffnen! 
+Bitte ein Ticket (issue) auf <a href="https://github.com/hmilz/kal3000-gcal-import">https://github.com/hmilz/kal3000-gcal-import</a> öffnen! 
 
 ## Bekannte Fehler
 
@@ -62,7 +64,7 @@ Vermutlich viele. Ich bin alles andere als ein begnadeter Programmierer.
 
 ## Internationalization
 
-Since this plugin is only relevant for people using the Urwahl3000 theme, and this includes only members of Bündnis 90 / Die Grünen, the plugin will only be available in German. Should a demand for other languages arise, feel free to contact me - and offer your support :-) 
+Since this plugin is only relevant for people using the Urwahl3000 theme, and this includes only members of Bündnis 90 / Die Grünen, the user interface of the plugin will only be available in German. Should a demand for other languages arise, feel free to contact me - contributions welcome! :-) 
 
 
 
