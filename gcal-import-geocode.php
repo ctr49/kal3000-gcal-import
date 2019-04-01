@@ -21,8 +21,6 @@ function gcal_import_geoshow($location) {
 
 function gcal_import_geocode($location) {
 
-    error_log ("entering gcal_import_geocode($location)");
-
     // we try to cache results as we will need many times the same results especially for recurring events.
     // we will use a hash for the location because the hash has a fixed length, while the location has not. 
     // This table will grow indefinitely over time, so we need to add a timestamp field and remove 
@@ -74,20 +72,15 @@ Suchen: if ( isset ( $options['geocache']['hashx'] ) ) ...
     $table = $wpdb->prefix.GCAL_GEO_TABLE;
     $hash = hash ('md5', $location); 
     $query = "SELECT gcal_geo_lat, gcal_geo_lon FROM $table WHERE gcal_geo_hash = '$hash'";
-    error_log ("gcal_import_geocode looking up hash $hash location $location");
-    error_log ("query: $query");
     $result = $wpdb->get_row( $query, ARRAY_N );
-    $file = dirname (__FILE__) . "/$hash-lookup-result.txt";
-    file_put_contents ($file, var_export ($result, TRUE));
     if ( $wpdb->num_rows == 1 ) { // it should only be a single row! 
-        error_log ("gcal_import_geocode found hash $hash lat $result[0] lon $result[1]");
+        error_log ("INFO: geocode cache hit hash $hash lat $result[0] lon $result[1]");
     } else {    
         // do the housekeeping first, before we create a new caching entry. 
         // remove all cache entries which are older than 30 days. 
         $outdated = time() - 2592000; // 30 Tage
         $query = "DELETE FROM $table WHERE gcal_geo_timestamp < $outdated";
         $wpdb->query($query);
-
 
         $options = get_option('gcal_options');
         $result = array ('', '');
@@ -116,6 +109,7 @@ Suchen: if ( isset ( $options['geocache']['hashx'] ) ) ...
             ));
         }
     }
+    error_log ("INFO: geocoded lat=$result[1] lon=$result[2] for hash $hash");
     return ($result);
     // error handling? 
 
@@ -134,11 +128,9 @@ function gcal_import_geocode_osm($location) {
 
 function gcal_import_geocode_inofficial($location) {
 
-    error_log ("entering gcal_import_geocode_inofficial($location)");
-
     $attempts = 0;
     $success = false;
-    // we'll need to be easy with GMaps in order no to get a 429 Too Many Requests. 
+    // we'll need to be easy with GMaps in order no to get a 429 Too Many Requests reply. 
     // max 3 retries with 2 second pauses, else we give up. 
     while ($success == false && $attempts < 3) {
         // @ = 'ignore_errors' => TRUE
@@ -160,18 +152,12 @@ function gcal_import_geocode_inofficial($location) {
     }
 
     // ok so $result seems to be valid.
-    $file = dirname (__FILE__) . "/$hash-result.html";
-    file_put_contents ($file, $result);
     // and now we need to look for:
     $pattern = '#www.google.com/maps/preview/place/[^/]+/@([\d\.]+),([\d\.]+),.*#';
     preg_match ($pattern, $result, $matches);
-    $file = dirname (__FILE__) . "/$hash-matches.html";
-    file_put_contents ($file, var_export ($matches, TRUE));
-    error_log ("gcal_import_geocode geocoded lat=$matches[1] lon=$matches[2] for hash $hash");
 
     // and return the result: 
     return array ($matches[1], $matches[2]); 
-
 }
 
 
