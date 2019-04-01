@@ -28,13 +28,13 @@ Für eine solche Integration gibt es eine Reihe von Motivatoren:
 
 1. Um eine auf Urwahl3000 und Wordpress basierende KV- oder OV-Seite betreiben zu können, braucht man zunächst eine irgendwo gehostete aktuelle Wordpress-Umgebung. Dazu wird auf die Dokumentation von Urwahl3000 verwiesen.
 
-2. Als nächstes holt man sich das Plugin unter https://www.gruene-freising.de/... (Attachment) und installiert es über die WP-Oberfläche wie gewohnt. 
+2. Als nächstes holt man sich das Plugin unter <a href="http://www.seneca.muc.de/kal3000-gcal-import/">http://www.seneca.muc.de/kal3000-gcal-import/</a> und installiert es über die WP-Oberfläche wie gewohnt. 
 
-Hinweis: kal3000-gcal-import nutzt für das Parsen von ICAL-Files und -Feeds das PHP-Modul icalparser (https://github.com/OzzyCzech/icalparser). Die Verwendung und die Einbindung in die Release-ZIP-Files erfolgt mit freundlicher Genehmigung des Autors Roman Ožana. 
+Hinweis: kal3000-gcal-import nutzt für das Parsen von ICAL-Files und -Feeds das PHP-Modul <a href="https://github.com/OzzyCzech/icalparser">icalparser</a>. Die Verwendung und die Einbindung in die Release-ZIP-Files erfolgt mit freundlicher Genehmigung des Autors Roman Ožana. 
 
 ## Konfiguration
 
-1. in WP legt man Terminkategorien an, z.B. eine pro OV und eine für den KV, plus weitere nach Bedarf. Das funktioniert am besten mit einer entsprechenden Seitenhierarchie wie auf https://www.gruene-freising.de/... . 
+1. in WP legt man Terminkategorien an, z.B. eine pro OV und eine für den KV, plus weitere nach Bedarf. Das funktioniert am besten mit einer entsprechenden Seitenhierarchie wie auf https://www.gruene-freising.de/... (Beispiele folgen). 
 
 2. Im Admin-Teil des Plugins unter "Einstellungen / GCal Importer" erscheinen die angelegten Terminkategorien. Jeder Kategorie weist man dann einen öffentlichen Google-Kalender in Form des "public ics"-Links zu, beispielsweise <a href="https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics">https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics</a>. 
 
