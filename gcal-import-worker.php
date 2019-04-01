@@ -19,12 +19,6 @@ require_once dirname ( __FILE__ ) . "/gcal-import-geocode.php";
 
 function gcal_import_worker() {
 
-    error_log ("gcal_import_worker started", 0);
-/*
-    error_log ("und wieder raus.");
-    return (0);
-*/
-
     /*
      * retrieve the proxy from the db, and if it exists, construct a context. 
      * TODO: USER:PASS in DB. 
@@ -33,18 +27,14 @@ function gcal_import_worker() {
      */
 
     $options = get_option('gcal_options');
-
-    $file = dirname ( __FILE__ ) . '/options.txt'; 
-    file_put_contents ($file, var_export($options, TRUE));
     $terms = get_terms( array(
                           'taxonomy' => 'termine_type',
                           'hide_empty' => false,  ) 
                     );
     foreach($terms as $term){
         $unique_id = 'gcal_feed_' . $term->name;
-        error_log ("found event category $unique_id");
         if ( empty ( $options[$unique_id] ) || $options[$unique_id] == '' ) {
-            error_log ( "link for event category $term->name is not known; next");
+            error_log ( "INFO: link for event category $term->name is not known; next");
             continue;
         }
 
@@ -59,27 +49,24 @@ The update and delete logic goes as follows:
   Apparently, they were deleted on the remote end. 
 */
 
-        // so we look for all published event posts in the event category 
-        // TODO that have a UID (because those without were posted locally!) 
+        // so we look for all published event posts in the GCal event category 
         $args = array (
             'post_type'   => 'termine',
+            'post_status' => 'publish',
             'meta_key'    => '_gcal_category',
             'meta_value'  => $term->name,
-            'post_status' => 'publish',
         );
         $post_ids = get_posts( $args );
-        $file = dirname (__FILE__) . "/post_ids_" . $term->name . "_all.txt";
-        file_put_contents($file, var_export ($post_ids, TRUE));
         // and set their recent flag to false. 
         if(is_array($post_ids)) {
             foreach( $post_ids as $post_id ) {
                 $id = $post_id->ID;
-                update_post_meta( $id, '_gcal_recent', false );
+                update_post_meta( $id, '_gcal_recent', 'false' );
             }  
         }
     	// now we process the current feed. 
         $link = $options[$unique_id];
-        error_log ("now importing event cat $term->name, link $link");
+        error_log ("INFO: now importing event cat $term->name, link $link");
     	gcal_import_do_import($term->name, $link);
 
         // look if there are any published event posts in the current event category which were not posted anew or updated (ie recent == false)
@@ -93,45 +80,39 @@ The update and delete logic goes as follows:
                 ), 
                 array(
                     'key'     => '_gcal_recent',
-                    'value'   => false,
+                    'value'   => 'false',
                 ),        
             )
         );
         $post_ids = get_posts( $args );
         // and trash them. 
-        $file = dirname (__FILE__) . "/post_ids_" . $term->name . "_trash.txt";
-        file_put_contents($file, var_export ($post_ids, TRUE));
         if(is_array($post_ids)) {
             foreach( $post_ids as $post_id ) {
                 $id = $post_id->ID;
                 wp_trash_post( $id );
-                error_log ("Event post $_id gelöscht.");
+                error_log ("Event post $id gelöscht.");
             }  
         }
 
     }	    
-    error_log ("gcal_import_worker finished", 0);
 }	
 
 add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
 
 
-function gcal_import_do_import($category, $link) {
+require_once dirname (__FILE__) . '/icalparser/src/IcalParser.php';
+require_once dirname (__FILE__) . '/icalparser/src/Recurrence.php';
+require_once dirname (__FILE__) . '/icalparser/src/Freq.php';
+require_once dirname (__FILE__) . '/icalparser/src/WindowsTimezones.php';
 
-    error_log ("entering gcal_import_do_import($category, $link)");
-   
-	require_once dirname (__FILE__) . '/icalparser/src/IcalParser.php';
-	require_once dirname (__FILE__) . '/icalparser/src/Recurrence.php';
-	require_once dirname (__FILE__) . '/icalparser/src/Freq.php';
-	require_once dirname (__FILE__) . '/icalparser/src/WindowsTimezones.php';
+function gcal_import_do_import($category, $link) {
 
 	$cal = new \om\IcalParser();
 	$results = $cal->parseFile($link);
 
 // TODO: Fehlerbehandlung, wenn der Link kaputt ist. Muss graceful passieren. 
-
-    $file = dirname (__FILE__) . "/cal-$category-parsed.txt";
-    file_put_contents ($file, var_export($results, TRUE));
+// icalparser nutzt intern file_get_contents, und da kommt man nicht ohne weiteres ran. Evtl. ändern auf curl? 
+// oder abfangen mit @file... 
 
     // we must set a current user because we may not be logged in. 
     $user_id = 1;
@@ -141,16 +122,15 @@ function gcal_import_do_import($category, $link) {
         wp_set_auth_cookie( $user_id );
     }
 	foreach ($cal->getSortedEvents() as $r) {
-        // if DTEND lies in the past, this event has ended. Ignore. 
+        // if DTEND lies in the past, this event has expired. Ignore. 
         $now = new DateTime(); 
 //        $dtend = new DateTime($r['DTEND']);
         $summary = $r['SUMMARY'];
         $dtstart = $r['DTSTART']->format('d.m.Y H:i');
         if ($r['DTEND'] < $now) {
-            error_log ("not posting expired event $summary on $dtstart");
             continue;
         } else {
-            error_log ("processing $summary on $dtstart");
+            error_log ("INFO: processing $summary on $dtstart");
         }
 
         // The zeitstempel. No idea what it's for, but kal3000 seems to use it. 
@@ -175,7 +155,6 @@ function gcal_import_do_import($category, $link) {
 
         // geocoden
         $location = urldecode ($r['LOCATION']);
-        error_log ("invoking gcal_import_geocode for $location");
         $my_latlon = gcal_import_geocode($location);
 
         // create a default form
@@ -206,15 +185,12 @@ function gcal_import_do_import($category, $link) {
         $post->post_title = apply_filters( 'default_title', $post_title, $post );
         $post->post_excerpt = apply_filters( 'default_excerpt', $post_excerpt, $post );
 
-        $file = dirname (__FILE__) . '/' . 'post-defaults.txt';
-        file_put_contents ( $file, var_export ($post, TRUE) );
-
 // TODO: 
         if ( isset($r['ATTACH']) ) {
             // create image attachment and associate with new post
             $attach = $r['ATTACH'];
             $summary = $r['SUMMARY'];
-            error_log ("gcal_import_do_import found attachment $attach for $summary");
+            error_log ("INFO: found attachment $attach for $summary");
         }
 
         // and fill in the post form
@@ -238,7 +214,7 @@ function gcal_import_do_import($category, $link) {
         $post->meta_input = array(
             '_wpcal_from' => $r['DTSTART']->format('d.m.Y H:i'),
             '_bis' => $r['DTEND']->format('d.m.Y H:i'),
-            '_geocity' => gcal_import_geocity($r['LOCATION']),
+            '_geostadt' => gcal_import_geocity($r['LOCATION']),
             '_geoshow' => gcal_import_geoshow($r['LOCATION']),
             '_lat' => $my_latlon[0],
             '_lon' => $my_latlon[1],
@@ -247,53 +223,74 @@ function gcal_import_do_import($category, $link) {
             '_veranstalterlnk' => '',
             '_zeitstempel' => $zeitstempel,
             '_gcal_uid' => $r['UID'],
-            '_gcal_recent' => true,
-            '_gcal_created' => $r['LAST-MODIFIED']->format('d.m.Y H:i'),
+            '_gcal_recent' => 'true',
+            '_gcal_created' => $r['LAST-MODIFIED']->format('U'),
             '_gcal_category' => $category,
+            '_secretevent' => false,
         );
 
-        // debug
-        $file = dirname (__FILE__) . '/' . $post->post_name . '-finished.txt';
-        file_put_contents ( $file, var_export ($post, TRUE) );
-
-        // so we have the new posts's attributes. Now we need to decide what to do with it.  Jetzt müssen wir entscheiden, was damit zu tun ist. 
-        // first, we try to find a published post with the same UID: 
+        // so we have the new posts's attributes. Now we need to decide what to do with it. 
+        // first, we try to find a published post with the same UID and zeitstempel. (due to recurring events having the same UID)
+        // Alas, this will lead to events that were shifted to be trashed and posted anew. We cannot tell shifted events from recurring events.
         $args = array (
             'post_type'   => 'termine',
-            'meta_key'    => '_gcal_uid',
-            'meta_value'  => $r['UID'],
             'post_status' => 'publish',
+            'meta_query'  => array(
+                array(
+                    'key'     => '_gcal_uid',
+                    'value'   => $r['UID'],
+                ), 
+                array(
+                    'key'     => '_zeitstempel',
+                    'value'   => $zeitstempel,
+                ),        
+            )
         );
         $post_ids = get_posts( $args );  
         // did we find one? (It should really be only one!) 
-        if ( empty ( $post_ids ) ) {
-            // ok, none found, so we insert the new one
-            $post_id = wp_insert_post( $post, false );
-            // pretend we're a human:
-            update_post_meta( $post_id, '_edit_last', $user_id );
-            $now = time();
-            $lock = "$now:$user_id";
-            update_post_meta( $post_id, '_edit_lock', $lock );
-            // and assign the taxonomy type and event category. 
-            wp_set_object_terms( $post_id, $category, 'termine_type' );
-            error_log ("posted new post $post_id");
-        } else {
-            // good, the post exists already. 
-            $id = $post_ids[0]->ID;
-            $created = get_post_meta( $id, '_gcal_created' );
-            // was it updated on the remote calendar? (was if modified after it was created remotely?) 
-            if ( $r['LAST-MODIFIED'] > $created ) {
-                // yes, so we update the existing post. We don't care _what_ changed. 
-                $post->ID = $id ; 
-                $post_id = wp_update_post( $post, false );
-                error_log ("updated post $post_id");
-            } elseif ( $r['LAST-MODIFIED'] == $created ) { 
-                // it was not modified after we created it, so we do nothing! 
-            } elseif ( $r['LAST-MODIFIED'] < $created ) {
-                // iiiiek! A time reversal or a secret time machine! That should not happen! 
-                error_log ("Warnung: merkwürdiges last-modified Datum beim Update von Post $post_id!");
+        if ( is_array ( $post_ids ) ) {
+             if ( empty ( $post_ids ) ) {
+                // ok, none found, so we insert the new one
+                $post_id = wp_insert_post( $post );
+                if ( is_wp_error( $post_id ) ) {    
+                    $message = $post_id->get_error_message();
+                    error_log ( "WARN: $message" ); 
+                } else {
+                    update_post_meta( $post_id, '_edit_last', $user_id );
+                    $now = time();
+                    $lock = "$now:$user_id";
+                    update_post_meta( $post_id, '_edit_lock', $lock );
+                    // and assign the taxonomy type and event category. 
+                    wp_set_object_terms( $post_id, $category, 'termine_type' );
+                    error_log ("INFO: posted new post $post_id");
+                }
+            } else {
+                // good, the post exists already. 
+                $id = $post_ids[0]->ID;
+                $created = get_post_meta( $id, '_gcal_created', true );
+                $lastmodified = $r['LAST-MODIFIED']->format('U');
+                // was it updated on the remote calendar? (was if modified after it was created remotely?) 
+                if ( $lastmodified > $created ) {
+                    // yes, so we update the existing post. We don't care _what_ changed. 
+                    $post->ID = $id ; 
+                    $post_id = wp_update_post( $post, false );
+                    // and update the _created field
+                    update_post_meta ( $id, '_gcal_created', $lastmodified ); 
+                    error_log ("INFO: updated post $post_id");
+                } elseif ( $lastmodified == $created ) { 
+                    // it was not modified after we created it, so we only update the recent tag. 
+                } elseif ( $lastmodified < $created ) {
+                    // iiiiek! A time reversal or a secret time machine! That should not happen! 
+                    error_log ("WARN: post $id last-modified : created $lastmodified < $created ");
+                }
+                // and set the event to recent = true no matter what. 
+                update_post_meta ( $id, '_gcal_recent', 'true' ); 
             }
-        } 
+        } else {
+            $file = dirname (__FILE__) . '/get_posts-' . $post->post_name . '.txt';
+            error_log ("WARN: hmmm, get_posts() did not return an array. Logging to $file");
+            file_put_contents ($file, var_export ($post_ids, TRUE)); 
+        }
         // and on the next entry. 
 	}
     // foreach end. we're finished. 
