@@ -3,7 +3,7 @@
  * Plugin Name: Kal3000 Google Calender Importer
  * Plugin URI:  https://github.com/hmilz/kal3000-gcal-import
  * Description: Imports and Merges an Arbitrary Number of Public Google Calendars into Kal3000
- * Version:     0.1
+ * Version:     0.2.0
  * Author:      Harald Milz <hm@seneca.muc.de>
  * License:     GPLv3
  * License URI: https://www.gnu.org/licenses/gpl-3.0
@@ -25,7 +25,6 @@
 
 defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
-define ('GCAL_TABLE', 'gcal_import');
 define ('GCAL_GEO_TABLE', 'gcal_import_geocache');
 
 
@@ -65,41 +64,7 @@ function gcal_cron_interval( $schedules ) {
 
 function gcal_import_activate()
 {
-    error_log ("gcal_import_activate started");
     global $wpdb;
-    // CREATE table if it does not exist already. 
-/*
-    $table = $wpdb->prefix.GCAL_TABLE;
-    $query = "CREATE TABLE IF NOT EXISTS $table (
-        id INT(9) NOT NULL AUTO_INCREMENT,
-        gcal_category VARCHAR(32) NOT NULL,
-        gcal_link VARCHAR(256) NOT NULL,
-        gcal_active INT(9) DEFAULT 1,
-	    UNIQUE KEY id (id)
-    );";
-    $wpdb->query($query);
-
-    // Populate table
-    // this will later be set by the admin page
-    // empty it first to prevent doublettes
-    $wpdb->query("DELETE FROM $table WHERE 1=1");
-    $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
-        VALUES('Kreisverband', 'https://calendar.google.com/calendar/ical/gruene.freising%40gmail.com/public/basic.ics', '1')");
-    $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
-        VALUES('Neufahrn', 'https://calendar.google.com/calendar/ical/gruene.neufahrn%40gmail.com/public/basic.ics', '1')");
-    $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
-        VALUES('Holledau', 'https://calendar.google.com/calendar/ical/gruene.holledau%40gmail.com/public/basic.ics', '0')");
-*/
-/*
-    $wpdb->query("INSERT INTO $table(gcal_category, gcal_link, gcal_active)
-	    VALUES('ov-freising', '/tmp/neufahrn.ics', '1')");
-*/
-
-    // Create some plugin options in wp_options if they don't exist already
-//    add_option( '_gcal_geocoding', 'off', '', 'no' );   // off, official, inofficial, or OSM (experimental)
-//    add_option( '_gcal_apikey', '', '', 'no' );         // default empty
-//    add_option( '_gcal_interval', '5', '', 'no' );     // default 60 minutes
-    
     // CREATE geocaching table if it does not exist already. 
     // the location field will be used only during development and debugging, and will be omitted in production. 
     $table = $wpdb->prefix.GCAL_GEO_TABLE;
@@ -118,8 +83,7 @@ function gcal_import_activate()
     if ( ! wp_next_scheduled( 'gcal_import_worker_hook' ) ) {
         wp_schedule_event( time(), 'gcal_interval', 'gcal_import_worker_hook' );
     }
-    error_log ("gcal_import_activate finished");
-
+    error_log ("INFO gcal_import activated");
 }
 
 register_activation_hook( __FILE__, 'gcal_import_activate' );
@@ -134,9 +98,9 @@ register_activation_hook( __FILE__, 'gcal_import_activate' );
 
 function gcal_import_deactivate()
 {
-    error_log ("gcal_import_deactivate started");
+    // clean up! Many plugins forget the housekeeping when deactivating. 
     wp_clear_scheduled_hook('gcal_import_worker_hook');
-    error_log ("gcal_import_deactivate finished");
+    error_log ("INFO: gcal_import deactivated");
 }	
 
 register_deactivation_hook( __FILE__, 'gcal_import_deactivate' );
@@ -151,7 +115,8 @@ register_deactivation_hook( __FILE__, 'gcal_import_deactivate' );
 
 function gcal_import_uninstall()
 {
-    error_log ("gcal_import_uninstall started");
+    // clean up! Many plugins forget the housekeeping when uninstalling. 
+    error_log ("INFO: uninstalling gcal_import");
     // can we uninstall without deactivating first?     
     // gcal_import_deactivate; 
     global $wpdb;
@@ -160,19 +125,7 @@ function gcal_import_uninstall()
     $wpdb->query( "DROP TABLE IF EXISTS $table" );
     // and the options.
     delete_option ( 'gcal_options' );
-//     $options = array( '_gcal_geocoding', '_gcal_apikey', '_gcal_interval' );
-//     foreach ( $options AS $option ) {
-//         delete_option( $option );
-//     }
-//    error_log ("gcal_import_uninstall finished");
 }	
 
 register_uninstall_hook( __FILE__, 'gcal_import_uninstall' );
-
-
-
-
-
-	
-
 
