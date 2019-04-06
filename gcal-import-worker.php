@@ -107,6 +107,7 @@ require_once dirname (__FILE__) . '/icalparser/src/WindowsTimezones.php';
 
 function gcal_import_do_import($category, $link) {
 
+    $my_latlon = array('', '');
 	$cal = new \om\IcalParser();
 	$results = $cal->parseFile($link);
 
@@ -156,6 +157,8 @@ function gcal_import_do_import($category, $link) {
         // geocoden
         $location = urldecode ($r['LOCATION']);
         $my_latlon = gcal_import_geocode($location);
+        $file = dirname (__FILE__) . "/latlon-$hash.txt";
+        file_put_contents ($file, var_export ($my_latlon, TRUE));
 
         // create a default form
 //         $post = get_default_post_to_edit ('termine', false);
@@ -193,6 +196,12 @@ function gcal_import_do_import($category, $link) {
             error_log ("INFO: found attachment $attach for $summary");
         }
 
+        if ( isset ( $r['CLASS'] ) && 'PRIVATE' == $r['CLASS']) {
+            $secretevent = true;
+        } else {
+            $secretevent = false;
+        }
+
         // and fill in the post form
         $post->post_author = '1';
         $post->post_content = $r['DESCRIPTION'];
@@ -218,7 +227,7 @@ function gcal_import_do_import($category, $link) {
             '_geoshow' => gcal_import_geoshow($r['LOCATION']),
             '_lat' => $my_latlon[0],
             '_lon' => $my_latlon[1],
-            '_zoom' => '10',
+            '_zoom' => '7',
             '_veranstalter' => '',
             '_veranstalterlnk' => '',
             '_zeitstempel' => $zeitstempel,
@@ -226,7 +235,7 @@ function gcal_import_do_import($category, $link) {
             '_gcal_recent' => 'true',
             '_gcal_created' => $r['LAST-MODIFIED']->format('U'),
             '_gcal_category' => $category,
-            '_secretevent' => false,
+            '_secretevent' => $secretevent,
         );
 
         // so we have the new posts's attributes. Now we need to decide what to do with it. 
