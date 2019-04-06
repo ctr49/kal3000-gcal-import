@@ -6,15 +6,26 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 function gcal_import_geocity($location) {
 
     // Wenn die Adresse im Feld Stadt steht, wird sie richtig angezeigt, ergo:
-    return ($location); 
-
+    $pattern = '/(.*), ([0-9]{5} [^,]+)/';
+    preg_match ($pattern, $location, $matches);
+    if ( empty ($matches[2])) {
+        return ($location);
+    } else {
+        return ($matches[2]); 
+    }
 }
 
 
 function gcal_import_geoshow($location) {
 
     // later
-    return ''; 
+    // not NULL so kal3000_the_termin_geo() displays a map if lat/lon are available. 
+    // Hotel-Gasthof Maisberger, Bahnhofstraße 54, 85375 Neufahrn bei Freising, Deutschland
+    // alles bis ", [0-9]{5}" ist geoshow
+    // alles ab [0-9]{5}[\,]+ ist geocity. 
+    $pattern = '/(.*), ([0-9]{5} [^,]+)/';
+    preg_match ($pattern, $location, $matches);
+    return ($matches[1]); 
 
 }
 
@@ -67,6 +78,10 @@ Suchen: if ( isset ( $options['geocache']['hashx'] ) ) ...
 
 */
 
+
+    if ( '' == $location ) {
+        return array ('', '');
+    }
     // check the cache first
     global $wpdb;
     $table = $wpdb->prefix.GCAL_GEO_TABLE;
@@ -97,32 +112,89 @@ Suchen: if ( isset ( $options['geocache']['hashx'] ) ) ...
                 break;
         }
 
+        $file = dirname (__FILE__) . "/geocode-result-$hash.txt";
+        file_put_contents ($file, var_export ($result, TRUE)); 
         // do the caching now, but only if both values are set. 
         // $wpdb_insert does all the sanitizing for us. 
-        if ($result[0] != "" && $result[1] != "") {
+        $lat = $result[0];
+        $lon = $result[1];
+        if ('' != $lat && '' != $lon) {
             $wpdb->insert($table, array(
                 'gcal_geo_location' => substr( $location, 0, 128 ),
                 'gcal_geo_hash' => $hash,
-                'gcal_geo_lat' => $result[0],
-                'gcal_geo_lon' => $result[1], 
+                'gcal_geo_lat' => $lat,
+                'gcal_geo_lon' => $lon, 
                 'gcal_geo_timestamp' => time(),
             ));
-        }
+            error_log ("INFO: geocoded and cached lat=$lat lon=$lon for location $location");
+        } 
+        // error handling? 
     }
-    error_log ("INFO: geocoded lat=$result[1] lon=$result[2] for hash $hash");
     return ($result);
-    // error handling? 
-
 }
 
 
 function gcal_import_geocode_official($location) {
-    return array ('','');
+    $options = get_option('gcal_options');
+    $apikey = $options['apikey'];
+    if ( empty ($apikey) ) {  // ??? we should handle this in the admin frontend. 
+        error_log ("WARN: using Google official geocoding but provided no APIKEY");
+        return array ('','');
+    } else {
+        $location = urlencode($location);
+
+        // https://developers.google.com/maps/documentation/geocoding/start
+        $url = "https://maps.googleapis.com/maps/api/geocode/json?address=$location&key=$apikey"; 
+        $response = wp_remote_get($url);
+        $json = wp_remote_retrieve_body($response);
+        $http_code = wp_remote_retrieve_response_code($response);
+        // we need to catch errors, e.g. wrong APIKEY, like this: 
+/*
+{
+   "error_message" : "The provided API key is invalid.",
+   "results" : [],
+   "status" : "REQUEST_DENIED"
+}
+*/
+
+        // https://www.php.net/manual/en/function.json-decode.php
+        $decoded = json_decode($json, true);
+        $file = dirname (__FILE__) . '/json-decoded.txt';
+        // should be results->geometry->location->lat/lng. 
+        file_put_contents ($file, var_export ($decoded, TRUE)); 
+        return array ('','');
+    }
 }
 
 
 function gcal_import_geocode_osm($location) {
-    return array ('','');
+    // https://wiki.openstreetmap.org/wiki/Nominatim
+    // https://nominatim.openstreetmap.org/search?q=Hotel+Gumberger+Gasthof+GmbH&format=json'
+    $location = urlencode($location);
+    error_log ("gcal_import_geocode_osm: location $location");
+    // the main problem with Nominatim is that it doesn't understand GCal location information very well. 
+    // we ought to cut off the location name and the country, i.e. zip code, city & street address only 
+    $url = 'https://nominatim.openstreetmap.org/search?q="' . $location . '"&format=json';
+    $response = wp_remote_get($url);
+    $json = wp_remote_retrieve_body($response);
+    $http_code = wp_remote_retrieve_response_code($response);
+    // we need to catch errors
+
+    // https://www.php.net/manual/en/function.json-decode.php
+    $decoded = json_decode($json, true);
+    // TODO error handling 
+/*
+    $file = dirname (__FILE__) . '/json-decoded.txt';
+    // should simply be ->lat and -> lon 
+    file_put_contents ($file, var_export ($decoded, TRUE)); 
+    // The first array level ([0]) is only needed because OSM returns a JSON with enclosing []. 
+*/
+    $lat = $decoded['0']['lat'];
+    $lon = $decoded['0']['lon'];
+/*
+    error_log ("gcal_import_geocode_osm found lat=$lat lon=$lon loc $location");
+*/
+    return array ($lat, $lon);
 }
 
 
