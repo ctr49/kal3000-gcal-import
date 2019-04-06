@@ -56,7 +56,7 @@ function gcal_admin_init(){
                     );
     foreach($terms as $term){
         $unique_id = 'gcal_feed_' . $term->name;
-        $feed_name = 'Terminkategorie: ' . $term->name;
+        $feed_name = $term->name;
         add_settings_field($unique_id, $feed_name, 'gcal_feeds_setting_string', 'gcal', 'gcal_feeds', array($unique_id));
     }
 
