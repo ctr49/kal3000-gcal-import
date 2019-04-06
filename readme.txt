@@ -48,6 +48,11 @@ Hinweis: kal3000-gcal-import nutzt für das Parsen von ICAL-Files und -Feeds das
 Keine bisher. 
 
 == Changelog ==
+
+= 0.3 =
+* new branch
+* added OpenStreetMap geocoding
+
 = 0.2 =
 * First fully functioning release. 
 
