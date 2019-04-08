@@ -44,6 +44,13 @@ Hinweis: kal3000-gcal-import nutzt für das Parsen von ICAL-Files und -Feeds das
 
 5. Speichern und fertig.
 
+Unter "Debugging" finden sich zwei weitere Einstellungen:
+
+1. zum einen kann man ein Debug-Logging aktivieren, mit dem das Plugin Einträge in ${APACHE_LOG_DIR}/error.log schreibt. 
+
+2. Die zweite Einstellung löscht den Geocoding-Cache bei jedem Plugin-Neustart, um das Geocoding für jede Lokation neu zu erzwingen, beispielsweise wenn man die Geocoding-Methode geändert hat. 
+
+
 ## Benutzung
 
 Um die Termine in WP anzuzeigen, gibt es zwei Wege: Das Termine-Widget in der rechten Spalte zeigt immer alle Termine an. Darüber hinaus kann man beispielsweise pro OV eine Unterseite mit dem Titel "OV Termine" anlegen, in der folgender Shortcode steht: <code>[wpcalendar kat=TERMINKATEGORIE]</code>. Auf dieser Seite werden dann nur die Termine des dazugehörigen OV angezeigt.
