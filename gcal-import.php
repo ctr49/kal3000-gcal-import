@@ -83,7 +83,15 @@ function gcal_import_activate()
     if ( ! wp_next_scheduled( 'gcal_import_worker_hook' ) ) {
         wp_schedule_event( time(), 'gcal_interval', 'gcal_import_worker_hook' );
     }
-    error_log ("INFO gcal_import activated");
+
+    gcal_error_log ("INFO: gcal_import activated");
+
+    // empty geocode cache if option is set. 
+    $options = get_option('gcal_options');
+    if ( isset ( $options['gcal_reset_cache'] ) && '1' == $options['gcal_reset_cache'] ) { 
+        $wpdb->query("DELETE IGNORE FROM $table WHERE 1=1"); 
+        gcal_error_log ("INFO: emptied geocoding cache");
+    }
 }
 
 register_activation_hook( __FILE__, 'gcal_import_activate' );
@@ -100,7 +108,7 @@ function gcal_import_deactivate()
 {
     // clean up! Many plugins forget the housekeeping when deactivating. 
     wp_clear_scheduled_hook('gcal_import_worker_hook');
-    error_log ("INFO: gcal_import deactivated");
+    gcal_error_log ("INFO: gcal_import deactivated");
 }	
 
 register_deactivation_hook( __FILE__, 'gcal_import_deactivate' );
@@ -116,7 +124,7 @@ register_deactivation_hook( __FILE__, 'gcal_import_deactivate' );
 function gcal_import_uninstall()
 {
     // clean up! Many plugins forget the housekeeping when uninstalling. 
-    error_log ("INFO: uninstalling gcal_import");
+    gcal_error_log ("INFO: uninstalling gcal_import");
     // can we uninstall without deactivating first?     
     // gcal_import_deactivate; 
     global $wpdb;
@@ -138,8 +146,8 @@ register_uninstall_hook( __FILE__, 'gcal_import_uninstall' );
 
 function gcal_error_log($args) {
     $options = get_option('gcal_options');
-    if ( isset ( gcal_options['gcal_debugging'] ) && '1' == gcal_options['gcal_debugging'] ) { 
-        error_log ( $args );
+    if ( isset ( $options['gcal_debugging'] ) && '1' == $options['gcal_debugging'] ) { 
+        error_log ( "GCal: $args" );
     }
 }
 

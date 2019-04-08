@@ -110,8 +110,8 @@ function gcal_geocoding_section_text() {
 ?>
     <p><b>Um Termine auf der Karte zu sehen, ist es nötig, die Orte zu geocoden, d.h. </br>
           deren geografische Länge und Breite herauszufinden. Dafür sind mehrere </br>
-          Verfahren wählbar:</b>
-    </p>
+          Verfahren wählbar. </br>
+    </b></p>
 <?php
 }
 
@@ -154,7 +154,11 @@ function gcal_geocoding_setting_string() {
 
 function gcal_debugging_section_text() {
 ?>
-    <p><b>Debugging aktivieren (landet in ${APACHE_LOG_DIR}/error.log).</b></p>
+    <p><b>Debugging aktivieren (landet in ${APACHE_LOG_DIR}/error.log).</br>
+          Um die Performance zu verbessern, werden gefundene Geocoding-Daten zwischengespeichert.  </br>
+          Zu Debugging-Zwecken kann der Zwischenspeicher (Cache) beim Neustart des Plugins gelöscht </br>
+          werden, um ein neues Geocoding aller Event-Lokationen zu erzwingen. </br>
+    </b></p>
 <?php
 }
 
@@ -163,9 +167,10 @@ function gcal_debugging_section_text() {
 function gcal_debugging_setting_string($args) {
     $options = get_option('gcal_options');
     // example from https://code.tutsplus.com/tutorials/the-wordpress-settings-api-part-8-validation-sanitisation-and-input-i--wp-25361
-    echo '<input type="checkbox" id="gcal_debugging" name="gcal_options[gcal_debugging]" value="1"' . checked( 1, $options['gcal_debugging'], false ) . '>';
+    echo '<input type="checkbox" id="gcal_debugging" name="gcal_options[gcal_debugging]" value="1"' . checked( 1, $options['gcal_debugging'], false ) . '> Debug-Logging aktivieren </br>';
     // actual logging is done by gcal_error_log() 
-}
+    // Cache reset on restart
+    echo '<input type="checkbox" id="gcal_reset_cache" name="gcal_options[gcal_reset_cache]" value="1"' . checked( 1, $options['gcal_reset_cache'], false ) . '> Geocoding-Cache bei Neustart des Plugins löschen </br>';}
 
 
 
