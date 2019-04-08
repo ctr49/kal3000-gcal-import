@@ -34,7 +34,7 @@ function gcal_import_worker() {
     foreach($terms as $term){
         $unique_id = 'gcal_feed_' . $term->name;
         if ( empty ( $options[$unique_id] ) || $options[$unique_id] == '' ) {
-            error_log ( "INFO: link for event category $term->name is not known; next");
+            gcal_error_log ( "INFO: link for event category $term->name is not known; next");
             continue;
         }
 
@@ -66,7 +66,7 @@ The update and delete logic goes as follows:
         }
     	// now we process the current feed. 
         $link = $options[$unique_id];
-        error_log ("INFO: now importing event cat $term->name, link $link");
+        gcal_error_log ("INFO: now importing event cat $term->name, link $link");
     	gcal_import_do_import($term->name, $link);
 
         // look if there are any published event posts in the current event category which were not posted anew or updated (ie recent == false)
@@ -90,7 +90,7 @@ The update and delete logic goes as follows:
             foreach( $post_ids as $post_id ) {
                 $id = $post_id->ID;
                 wp_trash_post( $id );
-                error_log ("Event post $id gelöscht.");
+                gcal_error_log ("Event post $id gelöscht.");
             }  
         }
 
@@ -131,7 +131,7 @@ function gcal_import_do_import($category, $link) {
         if ($r['DTEND'] < $now) {
             continue;
         } else {
-            error_log ("INFO: processing $summary on $dtstart");
+            gcal_error_log ("INFO: processing $summary on $dtstart");
         }
 
         // The zeitstempel. No idea what it's for, but kal3000 seems to use it. 
@@ -193,7 +193,7 @@ function gcal_import_do_import($category, $link) {
             // create image attachment and associate with new post
             $attach = $r['ATTACH'];
             $summary = $r['SUMMARY'];
-            error_log ("INFO: found attachment $attach for $summary");
+            gcal_error_log ("INFO: found attachment $attach for $summary");
         }
 
         if ( isset ( $r['CLASS'] ) && 'PRIVATE' == $r['CLASS']) {
@@ -263,7 +263,7 @@ function gcal_import_do_import($category, $link) {
                 $post_id = wp_insert_post( $post );
                 if ( is_wp_error( $post_id ) ) {    
                     $message = $post_id->get_error_message();
-                    error_log ( "WARN: $message" ); 
+                    gcal_error_log ( "WARN: $message" ); 
                 } else {
                     update_post_meta( $post_id, '_edit_last', $user_id );
                     $now = time();
@@ -271,7 +271,7 @@ function gcal_import_do_import($category, $link) {
                     update_post_meta( $post_id, '_edit_lock', $lock );
                     // and assign the taxonomy type and event category. 
                     wp_set_object_terms( $post_id, $category, 'termine_type' );
-                    error_log ("INFO: posted new post $post_id");
+                    gcal_error_log ("INFO: posted new post $post_id");
                 }
             } else {
                 // good, the post exists already. 
@@ -285,19 +285,19 @@ function gcal_import_do_import($category, $link) {
                     $post_id = wp_update_post( $post, false );
                     // and update the _created field
                     update_post_meta ( $id, '_gcal_created', $lastmodified ); 
-                    error_log ("INFO: updated post $post_id");
+                    gcal_error_log ("INFO: updated post $post_id");
                 } elseif ( $lastmodified == $created ) { 
                     // it was not modified after we created it, so we only update the recent tag. 
                 } elseif ( $lastmodified < $created ) {
                     // iiiiek! A time reversal or a secret time machine! That should not happen! 
-                    error_log ("WARN: post $id last-modified : created $lastmodified < $created ");
+                    gcal_error_log ("WARN: post $id last-modified : created $lastmodified < $created ");
                 }
                 // and set the event to recent = true no matter what. 
                 update_post_meta ( $id, '_gcal_recent', 'true' ); 
             }
         } else {
             $file = dirname (__FILE__) . '/get_posts-' . $post->post_name . '.txt';
-            error_log ("WARN: hmmm, get_posts() did not return an array. Logging to $file");
+            gcal_error_log ("WARN: hmmm, get_posts() did not return an array. Logging to $file");
             file_put_contents ($file, var_export ($post_ids, TRUE)); 
         }
         // and on the next entry. 

@@ -129,3 +129,17 @@ function gcal_import_uninstall()
 
 register_uninstall_hook( __FILE__, 'gcal_import_uninstall' );
 
+
+/* 
+ * Debug logging if debugging is activated 
+ * 
+ * @since 0.3.0
+ */
+
+function gcal_error_log($args) {
+    $options = get_option('gcal_options');
+    if ( isset ( gcal_options['gcal_debugging'] ) && '1' == gcal_options['gcal_debugging'] ) { 
+        error_log ( $args );
+    }
+}
+

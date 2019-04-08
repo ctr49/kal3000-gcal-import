@@ -65,6 +65,9 @@ function gcal_admin_init(){
 
     add_settings_section('gcal_geocoding', 'Geocoding', 'gcal_geocoding_section_text', 'gcal');
     add_settings_field('gcal_geocoding', 'Geocoding', 'gcal_geocoding_setting_string', 'gcal', 'gcal_geocoding');    
+
+    add_settings_section('gcal_debugging', 'Debugging', 'gcal_debugging_section_text', 'gcal');
+    add_settings_field('gcal_debugging', 'Debugging', 'gcal_debugging_setting_string', 'gcal', 'gcal_debugging');    
 }
 
 
@@ -133,7 +136,7 @@ function gcal_geocoding_setting_string() {
                     ),             
                     array( 
                         'option' => 'osm',
-                        'name' => 'OpenStreetMap - in Entwicklung',
+                        'name' => 'OpenStreetMap',
                     ),             
                 );
     
@@ -146,6 +149,22 @@ function gcal_geocoding_setting_string() {
 
         echo '</br>' ;
     }   
+}
+
+
+function gcal_debugging_section_text() {
+?>
+    <p><b>Debugging aktivieren (landet in ${APACHE_LOG_DIR}/error.log).</b></p>
+<?php
+}
+
+
+
+function gcal_debugging_setting_string($args) {
+    $options = get_option('gcal_options');
+    // example from https://code.tutsplus.com/tutorials/the-wordpress-settings-api-part-8-validation-sanitisation-and-input-i--wp-25361
+    echo '<input type="checkbox" id="gcal_debugging" name="gcal_options[gcal_debugging]" value="1"' . checked( 1, $options['gcal_debugging'], false ) . '>';
+    // actual logging is done by gcal_error_log() 
 }
 
 
