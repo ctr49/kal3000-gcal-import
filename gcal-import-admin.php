@@ -136,7 +136,7 @@ function gcal_geocoding_setting_string() {
                     ),             
                     array( 
                         'option' => 'osm',
-                        'name' => 'OpenStreetMap',
+                        'name' => 'OpenStreetMap - in Entwicklung',
                     ),             
                 );
     
