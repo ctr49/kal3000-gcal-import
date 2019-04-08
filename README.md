@@ -2,7 +2,7 @@
 
 Ein Wordpress-Plugin, das auf das Grüne Wordpress-Theme <a href="http://kre8tiv.de/urwahl3000/">Urwahl3000</a> aufsetzt und eine Integration beliebig vieler öffentlicher Google-Kalender ermöglicht.
 
-Version: 0.2.0 (stable) 
+Version: 0.3.0 (development) 
   
 ## Warnung
 
