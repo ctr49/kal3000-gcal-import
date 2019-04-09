@@ -167,7 +167,16 @@ function gcal_debugging_section_text() {
 function gcal_debugging_setting_string($args) {
     $options = get_option('gcal_options');
     // example from https://code.tutsplus.com/tutorials/the-wordpress-settings-api-part-8-validation-sanitisation-and-input-i--wp-25361
-    echo '<input type="checkbox" id="gcal_debugging" name="gcal_options[gcal_debugging]" value="1"' . checked( 1, $options['gcal_debugging'], false ) . '> Debug-Logging aktivieren </br>';
+//    echo '<input type="checkbox" id="gcal_debugging" name="gcal_options[gcal_debugging]" value="1"' . checked( 1, $options['gcal_debugging'], false ) . '> Debug-Logging aktivieren </br>';
+    // let's make a select box: 
+?>
+    <select id="gcal_debugging" name="gcal_options[gcal_debugging]"> 
+       <option value=0 <?php selected($options['gcal_debugging'], NONE); ?>>off</option> 
+       <option value=1 <?php selected($options['gcal_debugging'], CRIT); ?>>critical</option> 
+       <option value=2 <?php selected($options['gcal_debugging'], WARN); ?>>critical + warnings</option> 
+       <option value=3 <?php selected($options['gcal_debugging'], INFO); ?>>critical + warnings + info</option> 
+    </select> </br>
+<?php
     // actual logging is done by gcal_error_log() 
     // Cache reset on restart
     echo '<input type="checkbox" id="gcal_reset_cache" name="gcal_options[gcal_reset_cache]" value="1"' . checked( 1, $options['gcal_reset_cache'], false ) . '> Geocoding-Cache bei Neustart des Plugins löschen </br>';}
