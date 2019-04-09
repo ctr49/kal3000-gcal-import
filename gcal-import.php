@@ -27,6 +27,12 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 
 define ('GCAL_GEO_TABLE', 'gcal_import_geocache');
 
+// For gcal_error_log
+define ('INFO', 3);
+define ('WARN', 2);
+define ('CRIT', 1);
+define ('NONE', 0);
+
 
 // The real work goes here. 
 require_once dirname( __FILE__ ) . "/gcal-import-worker.php"; 
@@ -65,7 +71,7 @@ function gcal_cron_interval( $schedules ) {
 function gcal_import_activate()
 {
     global $wpdb;
-    // CREATE geocaching table if it does not exist already. 
+    // CREATE geocoding caching table if it does not exist already. 
     // the location field will be used only during development and debugging, and will be omitted in production. 
     $table = $wpdb->prefix.GCAL_GEO_TABLE;
     $query = "CREATE TABLE IF NOT EXISTS $table (
@@ -84,13 +90,13 @@ function gcal_import_activate()
         wp_schedule_event( time(), 'gcal_interval', 'gcal_import_worker_hook' );
     }
 
-    gcal_error_log ("INFO: gcal_import activated");
+    gcal_error_log (INFO, "gcal_import activated");
 
     // empty geocode cache if option is set. 
     $options = get_option('gcal_options');
     if ( isset ( $options['gcal_reset_cache'] ) && '1' == $options['gcal_reset_cache'] ) { 
         $wpdb->query("DELETE IGNORE FROM $table WHERE 1=1"); 
-        gcal_error_log ("INFO: emptied geocoding cache");
+        gcal_error_log (INFO, "emptied geocoding cache");
     }
 }
 
@@ -108,7 +114,7 @@ function gcal_import_deactivate()
 {
     // clean up! Many plugins forget the housekeeping when deactivating. 
     wp_clear_scheduled_hook('gcal_import_worker_hook');
-    gcal_error_log ("INFO: gcal_import deactivated");
+    gcal_error_log (INFO, "gcal_import deactivated");
 }	
 
 register_deactivation_hook( __FILE__, 'gcal_import_deactivate' );
@@ -124,7 +130,7 @@ register_deactivation_hook( __FILE__, 'gcal_import_deactivate' );
 function gcal_import_uninstall()
 {
     // clean up! Many plugins forget the housekeeping when uninstalling. 
-    gcal_error_log ("INFO: uninstalling gcal_import");
+    gcal_error_log (INFO, "uninstalling gcal_import");
     // can we uninstall without deactivating first?     
     // gcal_import_deactivate; 
     global $wpdb;
@@ -144,10 +150,13 @@ register_uninstall_hook( __FILE__, 'gcal_import_uninstall' );
  * @since 0.3.0
  */
 
-function gcal_error_log($args) {
+function gcal_error_log($level, $args) {
+    $levels = array ( 'NONE', 'CRIT', 'WARN', 'INFO' );
     $options = get_option('gcal_options');
-    if ( isset ( $options['gcal_debugging'] ) && '1' == $options['gcal_debugging'] ) { 
-        error_log ( "GCal: $args" );
+    if ( isset ( $options['gcal_debugging'] )) {
+        if ( $level <= (int) $options['gcal_debugging'] ) { 
+            error_log ( "GCal [" . $levels[$level] . "] " . $args );
+        }
     }
 }
 
