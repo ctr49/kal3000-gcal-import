@@ -128,7 +128,7 @@ function gcal_geocoding_setting_string() {
                     ),             
                     array( 
                         'option' => 'official',
-                        'name' => 'Google official - in Entwicklung; erfordert einen API Key --> ',
+                        'name' => 'Google official - erfordert einen API Key --> ',
                     ),             
                     array( 
                         'option' => 'inofficial',
@@ -144,7 +144,7 @@ function gcal_geocoding_setting_string() {
         $checked = ( $current == $coder['option'] ? 'checked' : '' );
         echo '<input type="radio" id="gcal_geocoding" name="gcal_options[gcal_geocoding]" value ="' . $coder['option'] . '" ' . $checked . '> ' . $coder['name'];
         if ( $coder['option'] == 'official' ) {
-            echo '<input type="text" size="32" id="gcal_geocoding" name="gcal_options[gcal_apikey]" value="' . $apikey . '">';
+            echo '<input type="text" size="48" id="gcal_geocoding" name="gcal_options[gcal_apikey]" value="' . $apikey . '">';
         }
 
         echo '</br>' ;

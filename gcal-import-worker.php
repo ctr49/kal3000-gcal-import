@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) or die( 'No script kiddies please!' );
 // we'll set this as category => proxy, link => link, active => 0; 
 // in the admin page, all entries will be displayed with a checkbox for activating, deactivating, deleting. 
 
-require_once dirname ( __FILE__ ) . "/gcal-import-geocode.php"; 
+require_once __DIR__ . "/gcal-import-geocode.php"; 
 
 
 /**
@@ -100,16 +100,36 @@ The update and delete logic goes as follows:
 add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
 
 
-require_once dirname (__FILE__) . '/icalparser/src/IcalParser.php';
-require_once dirname (__FILE__) . '/icalparser/src/Recurrence.php';
-require_once dirname (__FILE__) . '/icalparser/src/Freq.php';
-require_once dirname (__FILE__) . '/icalparser/src/WindowsTimezones.php';
+require_once __DIR__ . '/icalparser/src/IcalParser.php';
+require_once __DIR__ . '/icalparser/src/Recurrence.php';
+require_once __DIR__ . '/icalparser/src/Freq.php';
+require_once __DIR__ . '/icalparser/src/WindowsTimezones.php';
+
+
+function curl_get_remote($url) {
+        $ch = curl_init(); 
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        $response = curl_exec($ch);
+        if  ( curl_errno($ch) ) {
+//             $info = curl_getinfo($ch);
+            $message = __FUNCTION__ . ": cURL error " . curl_error($ch); 
+//             gcal_error_log ("WARN: $message");
+            curl_close($ch);
+            throw new \RuntimeException($message);
+        } 
+        curl_close($ch);
+        // now we're sure we have a valid response: 
+        return ($response);
+}
+
 
 function gcal_import_do_import($category, $link) {
 
     $my_latlon = array('', '');
 	$cal = new \om\IcalParser();
-	$results = $cal->parseFile($link);
+	$results = $cal->parseString(curl_get_remote($link));
 
 // TODO: Fehlerbehandlung, wenn der Link kaputt ist. Muss graceful passieren. 
 // icalparser nutzt intern file_get_contents, und da kommt man nicht ohne weiteres ran. Evtl. ändern auf curl? 
@@ -286,13 +306,10 @@ function gcal_import_do_import($category, $link) {
                     // and update the _created field
                     update_post_meta ( $id, '_gcal_created', $lastmodified ); 
                     gcal_error_log ("INFO: updated post $post_id");
-                } elseif ( $lastmodified == $created ) { 
-                    // it was not modified after we created it, so we only update the recent tag. 
                 } elseif ( $lastmodified < $created ) {
                     // iiiiek! A time reversal or a secret time machine! That should not happen! 
                     gcal_error_log ("WARN: post $id last-modified : created $lastmodified < $created ");
-                }
-                // and set the event to recent = true no matter what. 
+                } // else both are equal, and we do nothing except setting recent to true. 
                 update_post_meta ( $id, '_gcal_recent', 'true' ); 
             }
         } else {

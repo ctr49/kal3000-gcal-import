@@ -136,19 +136,22 @@ Suchen: if ( isset ( $options['geocache']['hashx'] ) ) ...
 
 function gcal_import_geocode_official($location) {
     $options = get_option('gcal_options');
-    $apikey = $options['apikey'];
-    if ( empty ($apikey) ) {  // ??? we should handle this in the admin frontend. 
+    if ( ! isset ( $options['gcal_apikey'] ) || '' == $options['gcal_apikey'] ) {  // ??? we should handle this in the admin frontend. 
         gcal_error_log ("WARN: using Google official geocoding but provided no APIKEY");
         return array ('','');
     } else {
+        $apikey = $options['gcal_apikey']; 
         $location = urlencode($location);
-
+        $useragent = 'Mozilla/5.0 (X11; Linux x86_64; rv:57.0) Gecko/20100101 Firefox/57.0';
         // https://developers.google.com/maps/documentation/geocoding/start
         $url = "https://maps.googleapis.com/maps/api/geocode/json?address=$location&key=$apikey"; 
-        $response = wp_remote_get($url);
-        $json = wp_remote_retrieve_body($response);
-        $http_code = wp_remote_retrieve_response_code($response);
-        // we need to catch errors, e.g. wrong APIKEY, like this: 
+
+        $response = curl_get_remote($url); 
+        $decoded = json_decode($response, true);
+        $lat = $decoded['results']['0']['geometry']['location']['lat']; 
+        $lon = $decoded['results']['0']['geometry']['location']['lng'];
+        gcal_error_log ("INFO: " . __FUNCTION__ . " found lat $lat lon $lon");
+        return array ($lat, $lon);
 /*
 {
    "error_message" : "The provided API key is invalid.",
@@ -156,13 +159,6 @@ function gcal_import_geocode_official($location) {
    "status" : "REQUEST_DENIED"
 }
 */
-
-        // https://www.php.net/manual/en/function.json-decode.php
-        $decoded = json_decode($json, true);
-        $file = dirname (__FILE__) . '/json-decoded.txt';
-        // should be results->geometry->location->lat/lng. 
-        file_put_contents ($file, var_export ($decoded, TRUE)); 
-        return array ('','');
     }
 }
 
