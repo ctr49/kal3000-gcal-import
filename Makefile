@@ -2,7 +2,7 @@
 NAME = kal3000-gcal-import
 ICALPARSER = icalparser
 INSTALLDIR = /usr/share/wordpress/wp-content/plugins/$(NAME)
-SSHACCOUNT = root@ubuntu1804
+SSHACCOUNT = root@192.168.20.180
 VERSION = 0.2.0
 
 
