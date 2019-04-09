@@ -2,7 +2,7 @@
 
 Ein Wordpress-Plugin, das auf das Grüne Wordpress-Theme <a href="http://kre8tiv.de/urwahl3000/">Urwahl3000</a> aufsetzt und eine Integration beliebig vieler öffentlicher Google-Kalender ermöglicht.
 
-Version: 0.3.0 (development) 
+Version: 0.3.1 (development) 
   
 ## Warnung
 
@@ -40,13 +40,13 @@ Hinweis: kal3000-gcal-import nutzt für das Parsen von ICAL-Files und -Feeds das
 
 3. Im Admin-Teil kann man das Zeitintervall einstellen, mit dem die Kalender synchronisiert werden. Standardeinstellung ist 60 Minuten. Bitte beachten, dass der Wordpress-Scheduler die Zeitintervalle nur ungefähr und abhängig von der Seitenaktivität einhält. 
 
-4. Im Admin-Teil kann man das Geocoding aktivieren. Derzeit ist nur ein inoffizieller Weg über Google Maps verfügbar, den Google nicht gerne sieht. Das offizielle <a href="https://developers.google.com/maps/documentation/geocoding/start">Google-API</a> erfordert einen API-Key, der bei intensiver Nutzung nicht kostenlos ist. Auf die Google-Policy wird hingewiesen. Außerdem ist OpenStreetMap verfügbar, aber es kann nicht sehr gut mit den Lokationen aus Google Maps umgehen zu können. 
+4. Im Admin-Teil kann man das Geocoding aktivieren. Derzeit ist nur ein inoffizieller Weg über Google Maps verfügbar, den Google nicht gerne sieht. Das offizielle <a href="https://developers.google.com/maps/documentation/geocoding/start">Google-API</a> erfordert einen API-Key, der bei intensiver Nutzung nicht kostenlos ist. Auf die Google-Policy wird hingewiesen. Außerdem ist OpenStreetMap verfügbar, aber es kann nicht sehr gut mit den Lokationen aus Google Maps umgehen. Im Moment ist es benutzbar, funktioniert aber nicht zuverlässig. 
 
 5. Speichern und fertig.
 
 Unter "Debugging" finden sich zwei weitere Einstellungen:
 
-1. zum einen kann man ein Debug-Logging aktivieren, mit dem das Plugin Einträge in ${APACHE_LOG_DIR}/error.log schreibt. 
+1. zum einen kann man ein Debug-Logging aktivieren, mit dem das Plugin Einträge in ${APACHE_LOG_DIR}/error.log schreibt. NONE schreibt nichts, CRIT (critical) am wenigsten, INFO (alles) am meisten. 
 
 2. Die zweite Einstellung löscht den Geocoding-Cache bei jedem Plugin-Neustart, um das Geocoding für jede Lokation neu zu erzwingen, beispielsweise wenn man die Geocoding-Methode geändert hat. 
 
