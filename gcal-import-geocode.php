@@ -89,7 +89,7 @@ Suchen: if ( isset ( $options['geocache']['hashx'] ) ) ...
     $query = "SELECT gcal_geo_lat, gcal_geo_lon FROM $table WHERE gcal_geo_hash = '$hash'";
     $result = $wpdb->get_row( $query, ARRAY_N );
     if ( $wpdb->num_rows == 1 ) { // it should only be a single row! 
-        error_log ("INFO: geocode cache hit hash $hash lat $result[0] lon $result[1]");
+        gcal_error_log (INFO, "geocode cache hit hash $hash lat $result[0] lon $result[1]");
     } else {    
         // do the housekeeping first, before we create a new caching entry. 
         // remove all cache entries which are older than 30 days. 
@@ -126,7 +126,7 @@ Suchen: if ( isset ( $options['geocache']['hashx'] ) ) ...
                 'gcal_geo_lon' => $lon, 
                 'gcal_geo_timestamp' => time(),
             ));
-            gcal_error_log ("INFO: geocoded and cached lat=$lat lon=$lon for location $location");
+            gcal_error_log (INFO, "geocoded and cached lat=$lat lon=$lon for location $location");
         } 
         // error handling? 
     }
@@ -137,7 +137,7 @@ Suchen: if ( isset ( $options['geocache']['hashx'] ) ) ...
 function gcal_import_geocode_official($location) {
     $options = get_option('gcal_options');
     if ( ! isset ( $options['gcal_apikey'] ) || '' == $options['gcal_apikey'] ) {  // ??? we should handle this in the admin frontend. 
-        gcal_error_log ("WARN: using Google official geocoding but provided no APIKEY");
+        gcal_error_log (WARN, "using Google official geocoding but provided no APIKEY");
         return array ('','');
     } else {
         $apikey = $options['gcal_apikey']; 
@@ -150,7 +150,7 @@ function gcal_import_geocode_official($location) {
         $decoded = json_decode($response, true);
         $lat = $decoded['results']['0']['geometry']['location']['lat']; 
         $lon = $decoded['results']['0']['geometry']['location']['lng'];
-        gcal_error_log ("INFO: " . __FUNCTION__ . " found lat $lat lon $lon");
+        gcal_error_log (INFO, __FUNCTION__ . " found lat $lat lon $lon");
         return array ($lat, $lon);
 /*
 {
@@ -167,7 +167,7 @@ function gcal_import_geocode_osm($location) {
     // https://wiki.openstreetmap.org/wiki/Nominatim
     // https://nominatim.openstreetmap.org/search?q=Hotel+Gumberger+Gasthof+GmbH&format=json'
     $location = urlencode($location);
-    gcal_error_log ("gcal_import_geocode_osm: location $location");
+    gcal_error_log (INFO, "gcal_import_geocode_osm: location $location");
     // the main problem with Nominatim is that it doesn't understand GCal location information very well. 
     // we ought to cut off the location name and the country, i.e. zip code, city & street address only 
     $url = 'https://nominatim.openstreetmap.org/search?q="' . $location . '"&format=json';
@@ -187,7 +187,7 @@ function gcal_import_geocode_osm($location) {
 */
     $lat = $decoded['0']['lat'];
     $lon = $decoded['0']['lon'];
-    gcal_error_log ("gcal_import_geocode_osm found lat=$lat lon=$lon loc $location");
+    gcal_error_log (INFO, "gcal_import_geocode_osm found lat=$lat lon=$lon loc $location");
     return array ($lat, $lon);
 }
 
@@ -210,9 +210,9 @@ function gcal_import_geocode_inofficial($location) {
         } elseif (429 == $http_code) {
             time.sleep(2);  
             ++$attempts; 
-            gcal_error_log ("INFO: got $attempts HTTP 429 Too Many Requests on $url");
+            gcal_error_log (INFO, "got $attempts HTTP 429 Too Many Requests on $url");
         } else {
-            gcal_error_log ("WARN: Unspecified HTTP error $http_code");
+            gcal_error_log (WARN, "Unspecified HTTP error $http_code");
             return array ('', '');
         }
     }
