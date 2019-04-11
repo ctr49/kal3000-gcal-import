@@ -26,6 +26,7 @@ function gcal_import_worker() {
      * http://www.pirob.com/2013/06/php-using-getheaders-and-filegetcontents-functions-behind-proxy.html
      */
 
+    gcal_error_log (INFO, __FUNCTION__ . " started");
     $options = get_option('gcal_options');
     $terms = get_terms( array(
                           'taxonomy' => 'termine_type',
@@ -66,7 +67,7 @@ The update and delete logic goes as follows:
         }
     	// now we process the current feed. 
         $link = $options[$unique_id];
-        gcal_error_log (INFO, "now importing event cat $term->name, link $link");
+        gcal_error_log (INFO, "importing event category $term->name");
     	gcal_import_do_import($term->name, $link);
 
         // look if there are any published event posts in the current event category which were not posted anew or updated (ie recent == false)
@@ -93,8 +94,8 @@ The update and delete logic goes as follows:
                 gcal_error_log (INFO, "Event post $id gelöscht.");
             }  
         }
-
     }	    
+    gcal_error_log (INFO, __FUNCTION__ . " finished");
 }	
 
 add_action( 'gcal_import_worker_hook', 'gcal_import_worker' );
