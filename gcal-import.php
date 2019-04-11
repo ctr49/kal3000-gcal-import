@@ -41,7 +41,7 @@ require_once dirname( __FILE__ ) . "/gcal-import-admin.php";
 
 // create custom scheduler from custom option
 add_filter( 'cron_schedules', 'gcal_cron_interval' );
- 
+
 function gcal_cron_interval( $schedules ) {
     $options = get_option('gcal_options');
     $current = ( isset ($options['gcal_timer']) ? $options['gcal_timer'] : 60 ); // default 60 minutes 
