@@ -229,13 +229,13 @@ function gcal_import_do_import($category, $link) {
 
         // and fill in the post form
         $post->post_author = '1';
-        $post->post_content = $r['DESCRIPTION'];
+        $post->post_content = $r['DESCRIPTION'] ?: '';
         $post->post_title = $r['SUMMARY'];
         // create an excerpt for the overview page ([wpcalendar kat=...])
-        if (strlen ($r['DESCRIPTION']) > 160) {
-            $post->post_excerpt = substr ($r['DESCRIPTION'], 0, 160) . ' ...'; // first 160 chars of DESCRIPTION plus ' ...'
+        if (strlen ($post->post_content) > 160) {
+            $post->post_excerpt = substr ($post->post_content, 0, 160) . ' ...'; // first 160 chars of DESCRIPTION plus ' ...'
         } else {
-            $post->post_excerpt = $r['DESCRIPTION'];
+            $post->post_excerpt = $post->post_content;
         }
         $post->post_status = 'publish';
         $post->post_category = array ($category,); 
