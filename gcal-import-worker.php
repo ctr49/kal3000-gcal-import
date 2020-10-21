@@ -176,10 +176,14 @@ function gcal_import_do_import($category, $link) {
         }
 
         // geocoden
-        $location = urldecode ($r['LOCATION']);
-        $my_latlon = gcal_import_geocode($location);
-        $file = dirname (__FILE__) . "/latlon-$hash.txt";
-        file_put_contents ($file, var_export ($my_latlon, TRUE));
+        $options = get_option('gcal_options');
+        if ( $options['gcal_geocoding'] != "off" ) {
+
+                $location = urldecode ($r['LOCATION']);
+                $my_latlon = gcal_import_geocode($location);
+                $file = dirname (__FILE__) . "/latlon-$hash.txt";
+                file_put_contents ($file, var_export ($my_latlon, TRUE));
+        }
 
         // create a default form
 //         $post = get_default_post_to_edit ('termine', false);
